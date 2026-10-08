@@ -12,11 +12,11 @@ class _SplashScreenState extends State {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 3), () {
+    Future.delayed(const Duration(seconds: 10), () {
       if (mounted) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const RegisterScreen()), // <--- Arahkan ke RegisterScreen
+          MaterialPageRoute(builder: (context) => const Register()), // <--- Arahkan ke RegisterScreen
         );
       }
     });

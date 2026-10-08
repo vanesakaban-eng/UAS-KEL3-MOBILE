@@ -26,6 +26,10 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Untuk mengambil foto struk pengeluaran.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Untuk memilih foto struk pengeluaran.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

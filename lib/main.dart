@@ -13,7 +13,7 @@ class UKuApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'UKu App',
+      title: 'UKu',
       theme: ThemeData(
         scaffoldBackgroundColor: Colors.white,
       ),

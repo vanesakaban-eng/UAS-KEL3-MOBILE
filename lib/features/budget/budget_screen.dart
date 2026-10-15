@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../data/uku_store.dart';
+import 'package:uku_app/data/uku_store.dart';
 
 class BudgetScreen extends StatefulWidget {
   const BudgetScreen({super.key, required this.store});

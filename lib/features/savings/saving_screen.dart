@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../data/uku_store.dart';
-import 'saving_categories.dart';
-import 'saving_creation_screen.dart';
-import 'saving_detail_screen.dart';
+import 'package:uku_app/data/uku_store.dart';
+import 'package:uku_app/features/savings/saving_categories.dart';
+import 'package:uku_app/features/savings/saving_creation_screen.dart';
+import 'package:uku_app/features/savings/saving_detail_screen.dart';
 
 class SavingScreen extends StatefulWidget {
   const SavingScreen({super.key, required this.store});

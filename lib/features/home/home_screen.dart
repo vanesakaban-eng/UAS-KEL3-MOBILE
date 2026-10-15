@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'edit_profil.dart';
-import '../data/uku_store.dart';
-import 'recap_screen.dart';
-import 'saving_detail_screen.dart';
-import 'saving_screen.dart';
-import 'transactions_screen.dart';
+import 'package:uku_app/data/uku_store.dart';
+import 'package:uku_app/features/expense/recap_screen.dart';
+import 'package:uku_app/features/expense/transactions_screen.dart';
+import 'package:uku_app/features/profile/edit_profil.dart';
+import 'package:uku_app/features/savings/saving_detail_screen.dart';
+import 'package:uku_app/features/savings/saving_screen.dart';
 
 class HomeScreenContent extends StatelessWidget {
   const HomeScreenContent({

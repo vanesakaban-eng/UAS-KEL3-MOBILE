@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import '../data/uku_store.dart';
-import 'home_screen.dart';
-import 'expense_screen.dart';
-import 'monthly_expense_screen.dart';
-import 'budget_screen.dart';
-import 'transactions_screen.dart';
-import 'recap_screen.dart';
+import 'package:uku_app/data/uku_store.dart';
+import 'package:uku_app/features/budget/budget_screen.dart';
+import 'package:uku_app/features/expense/expense_screen.dart';
+import 'package:uku_app/features/expense/monthly_expense_screen.dart';
+import 'package:uku_app/features/expense/recap_screen.dart';
+import 'package:uku_app/features/expense/transactions_screen.dart';
+import 'package:uku_app/features/home/home_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -16,6 +16,7 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   final UkuStore store = UkuStore();
   int currentIndex = 0;
+  bool showRecap = false;
 
   void openExpense() {
     Navigator.push<void>(
@@ -37,11 +38,18 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       (label: 'Transaksi'),
     ];
     final pages = [
-      HomeScreenContent(
-        store: store,
-        onExpense: openExpense,
-        onBudget: openBudget,
-      ),
+      if (showRecap)
+        RecapScreen(
+          store: store,
+          onBack: () => setState(() => showRecap = false),
+        )
+      else
+        HomeScreenContent(
+          store: store,
+          onExpense: openExpense,
+          onBudget: openBudget,
+          onRecap: () => setState(() => showRecap = true),
+        ),
       MonthlyExpenseScreen(
         store: store,
         onBack: () => setState(() => currentIndex = 0),
@@ -61,7 +69,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         child: SafeArea(
           top: false,
           child: SizedBox(
-            height: 64,
+            height: 72,
             child: Row(
               children: [
                 for (var index = 0; index < destinations.length; index++)
@@ -71,7 +79,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                       selected: currentIndex == index,
                       label: destinations[index].label,
                       child: InkWell(
-                        onTap: () => setState(() => currentIndex = index),
+                        onTap: () => setState(() {
+                          currentIndex = index;
+                          showRecap = false;
+                        }),
                         child: SizedBox.expand(
                           child: Column(
                             children: [

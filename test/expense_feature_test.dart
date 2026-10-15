@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uku_app/data/uku_store.dart';
-import 'package:uku_app/pages/expense_screen.dart';
-import 'package:uku_app/pages/monthly_expense_screen.dart';
-import 'package:uku_app/pages/transactions_screen.dart';
+import 'package:uku_app/features/expense/expense_screen.dart';
+import 'package:uku_app/features/expense/monthly_expense_screen.dart';
+import 'package:uku_app/features/expense/recap_screen.dart';
+import 'package:uku_app/features/expense/transactions_screen.dart';
+import 'package:uku_app/navigation/main_navigation.dart';
 
 void main() {
   testWidgets('selects a category from the grid and saves the expense',
@@ -251,5 +253,95 @@ void main() {
     expect(find.text('Detail Transaksi'), findsOneWidget);
     expect(find.text('Pakaian'), findsOneWidget);
     expect(find.text('- Rp 200.000'), findsOneWidget);
+  });
+
+  testWidgets('recap shows history for the current selected month',
+      (tester) async {
+    final store = UkuStore()..expenses.clear();
+    final now = DateTime.now();
+    store.addExpense(Expense(
+      category: 'Makan Bulan Ini',
+      amount: 45000,
+      date: now,
+      location: '',
+      purpose: '',
+      method: 'Cash',
+    ));
+    store.addExpense(Expense(
+      category: 'Belanja Bulan Lalu',
+      amount: 90000,
+      date: DateTime(now.year, now.month - 1, 12),
+      location: '',
+      purpose: '',
+      method: 'Cash',
+    ));
+
+    await tester.pumpWidget(
+      MaterialApp(home: Scaffold(body: RecapScreen(store: store))),
+    );
+
+    expect(find.text('Rekap Aktivitas'), findsOneWidget);
+    expect(find.text('Pilih Bulan & Tahun'), findsOneWidget);
+    expect(find.text('Grafik Pengeluaran'), findsOneWidget);
+    expect(find.text('Riwayat Pengeluaran'), findsOneWidget);
+    expect(find.text('Makan Bulan Ini'), findsOneWidget);
+    expect(find.text('- Rp 45.000'), findsOneWidget);
+    expect(find.text('Belanja Bulan Lalu'), findsNothing);
+  });
+
+  testWidgets('home opens recap without hiding bottom navigation',
+      (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(home: MainNavigationScreen()),
+    );
+
+    await tester.tap(find.text('Rekap Aktivitas'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('September, 2026'), findsWidgets);
+    expect(find.text('Pakaian'), findsOneWidget);
+    expect(find.text('Beranda'), findsOneWidget);
+    expect(find.text('Pengeluaran'), findsOneWidget);
+    expect(find.text('Budget'), findsOneWidget);
+    expect(find.text('Transaksi'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Kembali'));
+    await tester.pumpAndSettle();
+    expect(find.text('Grafik Pengeluaran'), findsNothing);
+  });
+
+  testWidgets('newly recorded expense appears with the seeded history',
+      (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(home: MainNavigationScreen()),
+    );
+
+    await tester.tap(find.text('Catat Pengeluaran'));
+    await tester.pumpAndSettle();
+    final shoppingCategory = find.widgetWithText(InkWell, 'Belanja');
+    await tester.ensureVisible(shoppingCategory);
+    await tester.tap(shoppingCategory);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextFormField).first, '25000');
+    await tester.tap(find.text('Tunai'));
+    await tester.pump();
+    await tester.tap(find.text('Simpan'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Transaksi').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Klik Untuk Detail Transaksi'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Sabtu, 12 September 2026 • Cash'), findsOneWidget);
+    expect(find.text('Pakaian'), findsOneWidget);
+    expect(find.text('Belanja'), findsOneWidget);
+    expect(find.text('- Rp 200.000'), findsOneWidget);
+    expect(find.text('- Rp 25.000'), findsOneWidget);
   });
 }

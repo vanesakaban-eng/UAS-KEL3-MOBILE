@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uku_app/data/uku_store.dart';
-import 'package:uku_app/pages/budget_screen.dart';
-import 'package:uku_app/pages/home_screen.dart';
-import 'package:uku_app/pages/saving_creation_screen.dart';
-import 'package:uku_app/pages/saving_screen.dart';
+import 'package:uku_app/features/budget/budget_screen.dart';
+import 'package:uku_app/features/home/home_screen.dart';
+import 'package:uku_app/features/savings/saving_creation_screen.dart';
+import 'package:uku_app/features/savings/saving_screen.dart';
 
 void main() {
   testWidgets('creates a saving after selecting a category', (tester) async {

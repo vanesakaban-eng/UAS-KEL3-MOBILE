@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'register_screen.dart'; // <--- Ubah ke RegisterScreen
+import 'package:uku_app/features/auth/register_screen.dart'; // <--- Ubah ke RegisterScreen
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});

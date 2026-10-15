@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../data/uku_store.dart';
-import 'saving_categories.dart';
+import 'package:uku_app/data/uku_store.dart';
+import 'package:uku_app/features/savings/saving_categories.dart';
 
 class SavingDetailsScreen extends StatefulWidget {
   const SavingDetailsScreen({

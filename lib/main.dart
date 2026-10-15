@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'pages/splash_screen.dart';
+import 'package:uku_app/features/auth/splash_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();

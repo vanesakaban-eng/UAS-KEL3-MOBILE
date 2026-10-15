@@ -2,8 +2,8 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import '../data/uku_store.dart';
-import 'ai_screen.dart';
+import 'package:uku_app/data/uku_store.dart';
+import 'package:uku_app/features/ai/ai_screen.dart';
 
 class ExpenseScreen extends StatefulWidget {
   const ExpenseScreen({super.key, required this.store});

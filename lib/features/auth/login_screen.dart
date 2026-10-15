@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'main_navigation.dart';
-import 'register_screen.dart';
+import 'package:uku_app/features/auth/register_screen.dart';
+import 'package:uku_app/navigation/main_navigation.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});

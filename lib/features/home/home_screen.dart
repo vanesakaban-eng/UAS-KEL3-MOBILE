@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:uku_app/data/uku_store.dart';
 import 'package:uku_app/features/expense/recap_screen.dart';
 import 'package:uku_app/features/expense/transactions_screen.dart';
@@ -16,6 +17,7 @@ class HomeScreenContent extends StatelessWidget {
     this.onSaving,
     this.onSavingTarget,
     this.onTransactions,
+    this.onExpenseDetails,
   });
   final UkuStore store;
   final VoidCallback onExpense;
@@ -24,6 +26,7 @@ class HomeScreenContent extends StatelessWidget {
   final VoidCallback? onSaving;
   final ValueChanged<Saving>? onSavingTarget;
   final VoidCallback? onTransactions;
+  final VoidCallback? onExpenseDetails;
 
   @override
   Widget build(BuildContext context) {
@@ -257,29 +260,106 @@ class HomeScreenContent extends StatelessWidget {
                           const SizedBox(height: 14),
                           _buildSectionCard(
                               title: 'AI Notifikasi',
-                              child: Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
+                              icon: Icons.auto_awesome,
+                              child: Column(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
                                       border: Border.all(color: Colors.black12),
-                                      borderRadius: BorderRadius.circular(10)),
-                                  child: Row(children: [
-                                    const Expanded(
-                                        child: Text('Kondisi keuangan saat ini',
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.black87))),
-                                    const SizedBox(width: 8),
-                                    Container(
-                                        width: 14,
-                                        height: 14,
-                                        decoration: BoxDecoration(
-                                            color: store.remainingBudget >= 0
-                                                ? Colors.green
-                                                : Colors.red,
-                                            shape: BoxShape.circle))
-                                  ]))),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          'Grafik Keuangan',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          _monthLabel(DateTime.now()),
+                                          style: const TextStyle(
+                                            fontSize: 9,
+                                            color: Colors.black54,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        _buildFinancialChart(store),
+                                        const SizedBox(height: 8),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 9,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            border: Border.all(
+                                                color: Colors.black26),
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              const Expanded(
+                                                child: Text(
+                                                  'Kondisi keuangan saat ini',
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: TextStyle(
+                                                    fontSize: 10,
+                                                    color: Colors.black87,
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Container(
+                                                width: 16,
+                                                height: 16,
+                                                decoration: BoxDecoration(
+                                                  color:
+                                                      store.remainingBudget >= 0
+                                                          ? Colors.green
+                                                          : Colors.red,
+                                                  shape: BoxShape.circle,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    height: 48,
+                                    child: ElevatedButton(
+                                      onPressed: onExpenseDetails,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.white,
+                                        foregroundColor: Colors.black87,
+                                        elevation: 2,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                      ),
+                                      child: const Text(
+                                        'Klik Untuk Detail Transaksi',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              )),
                         ])),
               ])));
         });
@@ -321,6 +401,7 @@ class HomeScreenContent extends StatelessWidget {
   Widget _buildSectionCard(
           {required String title,
           String? iconPath,
+          IconData? icon,
           String? subtitle,
           required Widget child,
           VoidCallback? onTap}) =>
@@ -343,7 +424,9 @@ class HomeScreenContent extends StatelessWidget {
                       style: const TextStyle(
                           fontWeight: FontWeight.bold, fontSize: 14)),
                   const SizedBox(width: 6),
-                  if (iconPath != null) Image.asset(iconPath, height: 18)
+                  if (iconPath != null) Image.asset(iconPath, height: 18),
+                  if (icon != null)
+                    Icon(icon, size: 20, color: const Color(0xFFFF8A00))
                 ]),
                 if (subtitle != null) ...[
                   const SizedBox(height: 2),
@@ -357,4 +440,105 @@ class HomeScreenContent extends StatelessWidget {
           ),
         ),
       );
+
+  Widget _buildFinancialChart(UkuStore store) {
+    final expense = store
+        .expensesForMonth(DateTime.now())
+        .fold<double>(0, (total, item) => total + item.amount);
+    final remaining = store.remainingBudget;
+    final maxY = [
+      store.budget,
+      expense,
+      remaining,
+    ].reduce((first, second) => first > second ? first : second);
+    final chartMax = maxY > 0 ? maxY : 1.0;
+
+    return SizedBox(
+      height: 116,
+      child: BarChart(
+        BarChartData(
+          maxY: chartMax,
+          minY: 0,
+          barTouchData: BarTouchData(enabled: false),
+          borderData: FlBorderData(show: false),
+          gridData: FlGridData(
+            drawVerticalLine: false,
+            horizontalInterval: chartMax / 4,
+            getDrawingHorizontalLine: (_) =>
+                const FlLine(color: Color(0xFFEDEDED), strokeWidth: 1),
+          ),
+          titlesData: FlTitlesData(
+            topTitles:
+                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles:
+                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 34,
+                getTitlesWidget: (value, _) => Text(
+                  _compactRupiah(value),
+                  style: const TextStyle(fontSize: 7, color: Colors.black54),
+                ),
+              ),
+            ),
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 20,
+                getTitlesWidget: (value, _) => Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    value.toInt() == 0 ? 'Pengeluaran' : 'Sisa budget',
+                    style: const TextStyle(fontSize: 7),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          barGroups: [
+            _financialBar(0, expense),
+            _financialBar(1, remaining > 0 ? remaining : 0),
+          ],
+        ),
+      ),
+    );
+  }
+
+  BarChartGroupData _financialBar(int x, double amount) => BarChartGroupData(
+        x: x,
+        barRods: [
+          BarChartRodData(
+            toY: amount,
+            width: 34,
+            color: const Color(0xFF5A9CF8),
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ],
+      );
+
+  String _monthLabel(DateTime date) {
+    const months = [
+      'Januari',
+      'Februari',
+      'Maret',
+      'April',
+      'Mei',
+      'Juni',
+      'Juli',
+      'Agustus',
+      'September',
+      'Oktober',
+      'November',
+      'Desember',
+    ];
+    return '${months[date.month - 1]} ${date.year}';
+  }
+
+  String _compactRupiah(double amount) {
+    if (amount >= 1000000) {
+      return '${(amount / 1000000).toStringAsFixed(1)}jt';
+    }
+    return '${(amount / 1000).round()}k';
+  }
 }

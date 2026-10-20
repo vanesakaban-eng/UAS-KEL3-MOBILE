@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uku_app/data/uku_store.dart';
 import 'package:uku_app/features/expense/expense_screen.dart';
 import 'package:uku_app/features/expense/monthly_expense_screen.dart';
 import 'package:uku_app/features/expense/recap_screen.dart';
 import 'package:uku_app/features/expense/transactions_screen.dart';
+import 'package:uku_app/features/home/home_screen.dart';
 import 'package:uku_app/navigation/main_navigation.dart';
 
 void main() {
@@ -359,6 +361,58 @@ void main() {
     await tester.tap(find.byTooltip('Kembali'));
     await tester.pumpAndSettle();
     expect(find.text('Grafik Pengeluaran'), findsNothing);
+  });
+
+  testWidgets('AI notification details opens the expense feature',
+      (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(home: MainNavigationScreen()),
+    );
+
+    expect(find.text('Grafik Keuangan'), findsOneWidget);
+    expect(find.text('Kondisi keuangan saat ini'), findsOneWidget);
+    final detailsButton = find.text('Klik Untuk Detail Transaksi');
+    await tester.ensureVisible(detailsButton);
+    await tester.tap(detailsButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Grafik Pengeluaran'), findsOneWidget);
+    expect(find.text('Pengeluaran'), findsWidgets);
+  });
+
+  testWidgets('AI finance chart plots actual expenses for the current month',
+      (tester) async {
+    final now = DateTime.now();
+    final store = UkuStore()..expenses.clear();
+    store.setBudget(100000);
+    store.addExpense(Expense(
+      category: 'Bulan ini',
+      amount: 25000,
+      date: now,
+      location: '',
+      purpose: '',
+      method: 'Tunai',
+    ));
+    store.addExpense(Expense(
+      category: 'Bulan lalu',
+      amount: 70000,
+      date: DateTime(now.year, now.month - 1, 1),
+      location: '',
+      purpose: '',
+      method: 'Tunai',
+    ));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: HomeScreenContent(store: store, onExpense: () {}),
+        ),
+      ),
+    );
+
+    final chart = tester.widget<BarChart>(find.byType(BarChart).first);
+    expect(chart.data.barGroups[0].barRods.single.toY, 25000);
+    expect(chart.data.barGroups[1].barRods.single.toY, 75000);
   });
 
   testWidgets('home transaction card opens the Transactions navigation page',

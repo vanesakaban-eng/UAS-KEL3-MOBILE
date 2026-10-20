@@ -73,6 +73,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           onSaving: () => openSavings(),
           onSavingTarget: openSavings,
           onTransactions: () => setState(() => currentIndex = 3),
+          onExpenseDetails: () => setState(() => currentIndex = 1),
         ),
       MonthlyExpenseScreen(
         store: store,

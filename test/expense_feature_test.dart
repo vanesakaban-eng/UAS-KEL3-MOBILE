@@ -224,7 +224,7 @@ void main() {
     expect(didGoBack, isTrue);
   });
 
-  testWidgets('transactions card opens the stored expense details',
+  testWidgets('transactions screen shows stored expense details directly',
       (tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
@@ -245,14 +245,29 @@ void main() {
 
     expect(find.text('Riwayat Transaksi'), findsOneWidget);
     expect(find.text('Sabtu, 12 September 2026'), findsOneWidget);
+    expect(find.text('Detail Transaksi'), findsNothing);
+    expect(find.text('Pakaian'), findsOneWidget);
+    expect(find.text('Metode: Cash'), findsOneWidget);
+    expect(find.text('- Rp 200.000'), findsOneWidget);
     await tester.tap(find.byTooltip('Kembali'));
     expect(didGoBack, isTrue);
-    await tester.tap(find.text('Klik Untuk Detail Transaksi'));
-    await tester.pumpAndSettle();
+  });
 
-    expect(find.text('Detail Transaksi'), findsOneWidget);
+  testWidgets('recap history includes expenses, income and saving activity',
+      (tester) async {
+    final store = UkuStore();
+
+    await tester.pumpWidget(
+      MaterialApp(home: Scaffold(body: RecapScreen(store: store))),
+    );
+
+    expect(find.text('Riwayat Pengeluaran'), findsOneWidget);
     expect(find.text('Pakaian'), findsOneWidget);
-    expect(find.text('- Rp 200.000'), findsOneWidget);
+    expect(find.text('Pemasukan bulanan'), findsOneWidget);
+    await tester.drag(find.byType(ListView).last, const Offset(0, -600));
+    await tester.pumpAndSettle();
+    expect(find.text('Jalan - jalan ke Bali'), findsOneWidget);
+    expect(find.text('3 aktivitas'), findsOneWidget);
   });
 
   testWidgets('recap shows history for the current selected month',
@@ -335,13 +350,11 @@ void main() {
 
     await tester.tap(find.text('Transaksi').last);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Klik Untuk Detail Transaksi'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Sabtu, 12 September 2026 • Cash'), findsOneWidget);
+    expect(find.text('Metode: Cash'), findsWidgets);
     expect(find.text('Pakaian'), findsOneWidget);
     expect(find.text('Belanja'), findsOneWidget);
     expect(find.text('- Rp 200.000'), findsOneWidget);
     expect(find.text('- Rp 25.000'), findsOneWidget);
+    expect(find.text('Detail Transaksi'), findsNothing);
   });
 }

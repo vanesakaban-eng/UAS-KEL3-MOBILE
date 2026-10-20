@@ -136,14 +136,14 @@ class HomeScreenContent extends StatelessWidget {
                                 child: _buildActionCard(
                                     'assets/icons/LoveforMoney.png', 'Nabung',
                                     onTap: onSaving ??
-                                        () => Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (_) => SavingScreen(
-                                                  store: store,
-                                                ),
-                                              ),
-                                            )))
+                                    () => Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                        builder: (_) => SavingScreen(
+                                          store: store,
+                                        ),
+                                          ),
+                                        )))
                           ]),
                           const SizedBox(height: 16),
                           _buildSectionCard(

@@ -1,5 +1,7 @@
 import 'dart:typed_data';
 
+import 'package:camera/camera.dart';
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uku_app/data/uku_store.dart';
@@ -26,6 +28,15 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
   final _imagePicker = ImagePicker();
   Uint8List? _billImage;
   bool _showBillCamera = false;
+  CameraController? _cameraController;
+  bool _cameraLoading = false;
+  String? _cameraError;
+
+  bool get _usesDesktopCamera => const {
+        TargetPlatform.windows,
+        TargetPlatform.linux,
+        TargetPlatform.macOS,
+      }.contains(defaultTargetPlatform);
 
   static const inputModes = ['Manual', 'Foto Bill', 'AIku'];
 
@@ -47,6 +58,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
 
   @override
   void dispose() {
+    _cameraController?.dispose();
     _amount.dispose();
     _location.dispose();
     _purpose.dispose();
@@ -111,7 +123,10 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
       category = value;
       _showBillCamera = inputMode == 'Foto Bill';
     });
-    if (inputMode == 'Foto Bill') return;
+    if (inputMode == 'Foto Bill') {
+      if (_usesDesktopCamera) _initializeDesktopCamera();
+      return;
+    }
     Future<void>.delayed(const Duration(milliseconds: 280), () {
       if (!mounted || category != value || _step != 0) return;
       setState(() => _step = 1);
@@ -133,17 +148,90 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
     }
   }
 
+  Future<void> _initializeDesktopCamera() async {
+    setState(() {
+      _cameraLoading = true;
+      _cameraError = null;
+    });
+    try {
+      final cameras = await availableCameras();
+      if (cameras.isEmpty) {
+        throw CameraException('NoCamera', 'Kamera tidak ditemukan');
+      }
+      final controller = CameraController(
+        cameras.first,
+        ResolutionPreset.medium,
+        enableAudio: false,
+      );
+      await controller.initialize();
+      if (!mounted || !_showBillCamera) {
+        await controller.dispose();
+        return;
+      }
+      setState(() {
+        _cameraController = controller;
+        _cameraLoading = false;
+      });
+    } on CameraException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _cameraLoading = false;
+        _cameraError = error.description ?? error.code;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _cameraLoading = false;
+        _cameraError = 'Tidak dapat mengakses kamera';
+      });
+    }
+  }
+
+  Future<void> _captureDesktopImage() async {
+    final controller = _cameraController;
+    if (controller == null || !controller.value.isInitialized) return;
+    try {
+      final image = await controller.takePicture();
+      final bytes = await image.readAsBytes();
+      if (!mounted) return;
+      setState(() {
+        _billImage = bytes;
+        _cameraController = null;
+      });
+      await controller.dispose();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Tidak dapat mengambil foto')),
+      );
+    }
+  }
+
+  void _closeBillCamera() {
+    final controller = _cameraController;
+    setState(() {
+      _showBillCamera = false;
+      _billImage = null;
+      _cameraController = null;
+      _cameraLoading = false;
+    });
+    controller?.dispose();
+  }
+
   void _continueFromBillCamera() {
+    final controller = _cameraController;
     setState(() {
       _showBillCamera = false;
       _step = 1;
+      _cameraController = null;
     });
+    controller?.dispose();
   }
 
   Widget _cameraActionButton({
     required String tooltip,
     required IconData icon,
-    required VoidCallback onPressed,
+    required VoidCallback? onPressed,
   }) {
     return SizedBox(
       width: 48,
@@ -181,15 +269,41 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                   children: [
                     if (_billImage != null)
                       Image.memory(_billImage!, fit: BoxFit.contain),
+                    if (_billImage == null &&
+                        _usesDesktopCamera &&
+                        _cameraController?.value.isInitialized == true)
+                      CameraPreview(_cameraController!),
+                    if (_billImage == null &&
+                        _usesDesktopCamera &&
+                        _cameraController?.value.isInitialized != true)
+                      Center(
+                        child: _cameraLoading
+                            ? const CircularProgressIndicator(
+                                color: Color(0xFFFF8800),
+                              )
+                            : Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    _cameraError ?? 'Kamera belum dimulai',
+                                    style: const TextStyle(color: Colors.white),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  TextButton.icon(
+                                    onPressed: _initializeDesktopCamera,
+                                    icon: const Icon(Icons.refresh),
+                                    label: const Text('Coba lagi'),
+                                  ),
+                                ],
+                              ),
+                      ),
                     Positioned(
                       top: 12,
                       left: 8,
                       child: IconButton(
                         tooltip: 'Kembali ke kategori',
-                        onPressed: () => setState(() {
-                          _showBillCamera = false;
-                          _billImage = null;
-                        }),
+                        onPressed: _closeBillCamera,
                         icon: const Icon(
                           Icons.arrow_back,
                           color: Color(0xFFFF8800),
@@ -213,7 +327,11 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                           _cameraActionButton(
                             tooltip: 'Ambil foto',
                             icon: Icons.camera_alt_outlined,
-                            onPressed: () => _pickBillImage(ImageSource.camera),
+                            onPressed: _usesDesktopCamera
+                              ? _cameraController?.value.isInitialized == true
+                                ? _captureDesktopImage
+                                : null
+                              : () => _pickBillImage(ImageSource.camera),
                           ),
                           const SizedBox(width: 20),
                           _cameraActionButton(

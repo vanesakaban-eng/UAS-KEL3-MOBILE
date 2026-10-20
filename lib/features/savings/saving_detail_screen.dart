@@ -45,6 +45,34 @@ class _SavingDetailScreenState extends State<SavingDetailScreen> {
         foregroundColor: Colors.black,
         elevation: 1,
       ),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            border: Border(top: BorderSide(color: Colors.black12)),
+          ),
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: _addBalance,
+              icon: const Icon(Icons.add, color: Color(0xFFFA9D2B)),
+              label: const Text(
+                'Tambah saldo',
+                style: TextStyle(
+                  color: Color(0xFFFA9D2B),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+              ),
+            ),
+          ),
+        ),
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -150,24 +178,6 @@ class _SavingDetailScreenState extends State<SavingDetailScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: ElevatedButton(
-              onPressed: _addBalance,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFAAE36),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text(
-                'Tambah Saldo',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-          ),
         ],
       ),
     );

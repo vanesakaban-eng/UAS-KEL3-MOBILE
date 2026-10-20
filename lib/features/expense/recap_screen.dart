@@ -35,16 +35,14 @@ class _RecapScreenState extends State<RecapScreen> {
   @override
   void initState() {
     super.initState();
-    if (widget.store.expenses.isEmpty) {
+    final activities = widget.store.activities;
+    if (activities.isEmpty) {
       _month = DateTime.now();
       return;
     }
 
-    final latestExpense = widget.store.expenses.reduce(
-      (latest, expense) =>
-          expense.date.isAfter(latest.date) ? expense : latest,
-    );
-    _month = DateTime(latestExpense.date.year, latestExpense.date.month);
+    final latestActivity = activities.first;
+    _month = DateTime(latestActivity.date.year, latestActivity.date.month);
   }
 
   Future<void> _pickMonth() async {
@@ -72,6 +70,7 @@ class _RecapScreenState extends State<RecapScreen> {
       builder: (context, _) {
         final expenses = widget.store.expensesForMonth(_month)
           ..sort((a, b) => b.date.compareTo(a.date));
+        final activities = widget.store.activitiesForMonth(_month);
         final dailyTotals = <int, double>{};
         for (final expense in expenses) {
           dailyTotals.update(
@@ -267,24 +266,24 @@ class _RecapScreenState extends State<RecapScreen> {
                     ),
                   ),
                   Text(
-                    '${expenses.length} transaksi',
+                    '${activities.length} aktivitas',
                     style: const TextStyle(color: Colors.black54, fontSize: 11),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
-              if (expenses.isEmpty)
+              if (activities.isEmpty)
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 20),
                   child: Center(
                     child: Text(
-                      'Belum ada riwayat pengeluaran',
+                      'Belum ada riwayat aktivitas',
                       style: TextStyle(color: Colors.black54, fontSize: 12),
                     ),
                   ),
                 )
               else
-                for (final expense in expenses)
+                for (final activity in activities)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 8),
                     child: Container(
@@ -309,7 +308,7 @@ class _RecapScreenState extends State<RecapScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  expense.category,
+                                  activity.title,
                                   style: const TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
@@ -317,7 +316,7 @@ class _RecapScreenState extends State<RecapScreen> {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  '${expense.date.day} ${_monthNames[expense.date.month - 1]} ${expense.date.year}',
+                                  '${activity.typeLabel} · ${activity.date.day} ${_monthNames[activity.date.month - 1]} ${activity.date.year}',
                                   style: const TextStyle(
                                     color: Colors.black54,
                                     fontSize: 10,
@@ -328,9 +327,11 @@ class _RecapScreenState extends State<RecapScreen> {
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            '- ${rupiah(expense.amount)}',
-                            style: const TextStyle(
-                              color: Color(0xFFE65353),
+                            '${activity.type == ActivityType.expense ? '-' : '+'} ${rupiah(activity.amount)}',
+                            style: TextStyle(
+                              color: activity.type == ActivityType.expense
+                                  ? Color(0xFFE65353)
+                                  : Color(0xFF278A5B),
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
                             ),

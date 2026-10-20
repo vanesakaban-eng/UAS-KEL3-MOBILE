@@ -15,17 +15,22 @@ class SavingCreationScreen extends StatefulWidget {
 
 class _SavingCreationScreenState extends State<SavingCreationScreen> {
   static const _categories = SavingCategory.all;
+  String? _selectedCategory;
 
   void _selectCategory(SavingCategory category) {
-    Navigator.push<void>(
-      context,
-      MaterialPageRoute<void>(
-        builder: (_) => SavingDetailsScreen(
-          store: widget.store,
-          category: category,
+    setState(() => _selectedCategory = category.name);
+    Future<void>.delayed(const Duration(milliseconds: 280), () {
+      if (!mounted || _selectedCategory != category.name) return;
+      Navigator.push<void>(
+        context,
+        MaterialPageRoute<void>(
+          builder: (_) => SavingDetailsScreen(
+            store: widget.store,
+            category: category,
+          ),
         ),
-      ),
-    );
+      );
+    });
   }
 
   @override
@@ -36,31 +41,54 @@ class _SavingCreationScreenState extends State<SavingCreationScreen> {
         child: Column(
           children: [
             SizedBox(
-              height: 58,
+              height: 100,
               child: Stack(
-                alignment: Alignment.center,
                 children: [
-                  Align(
-                    alignment: Alignment.centerLeft,
+                  Positioned(
+                    left: 0,
+                    top: 12,
                     child: IconButton(
-                      onPressed: () => Navigator.pop(context),
+                      tooltip: 'Kembali',
+                      onPressed: () => Navigator.of(context).maybePop(),
                       icon: const Icon(
                         Icons.arrow_back,
                         color: Color(0xFFFAAE36),
                       ),
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 58),
-                    child: const Text(
-                      'Buat Tabungan',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  Align(
+                    alignment: Alignment.topCenter,
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 58),
+                      child: const Text(
+                        'Buat Tabungan',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-            Expanded(child: _buildCategoryGrid()),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  const Text(
+                    'Pilih jenis tabungan',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _buildCategoryGrid(),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -69,18 +97,22 @@ class _SavingCreationScreenState extends State<SavingCreationScreen> {
 
   Widget _buildCategoryGrid() {
     return GridView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+      padding: EdgeInsets.zero,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       itemCount: _categories.length,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 4,
+        mainAxisExtent: 88,
         mainAxisSpacing: 8,
         crossAxisSpacing: 4,
-        childAspectRatio: 0.88,
       ),
       itemBuilder: (context, index) {
         final category = _categories[index];
+        final selected = _selectedCategory == category.name;
         return Semantics(
           button: true,
+          selected: selected,
           label: category.name,
           child: InkWell(
             onTap: () => _selectCategory(category),
@@ -91,8 +123,16 @@ class _SavingCreationScreenState extends State<SavingCreationScreen> {
                   width: 52,
                   height: 52,
                   decoration: BoxDecoration(
-                    color: Colors.transparent,
+                    color: selected
+                        ? const Color(0xFFF9C846)
+                        : Colors.transparent,
                     borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: selected
+                          ? const Color(0xFFFAAE36)
+                          : Colors.transparent,
+                      width: 2.5,
+                    ),
                   ),
                   alignment: Alignment.center,
                   child: Image.asset(
@@ -108,7 +148,7 @@ class _SavingCreationScreenState extends State<SavingCreationScreen> {
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 10, height: 1.1),
+                  style: const TextStyle(fontSize: 12, height: 1.1),
                 ),
               ],
             ),

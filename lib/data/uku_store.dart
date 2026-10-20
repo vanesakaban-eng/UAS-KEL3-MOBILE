@@ -18,6 +18,34 @@ class Expense {
   final String method;
 }
 
+enum ActivityType { expense, income, saving }
+
+class FinancialActivity {
+  const FinancialActivity({
+    required this.type,
+    required this.title,
+    required this.amount,
+    required this.date,
+    this.description = '',
+    this.location = '',
+    this.method = '',
+  });
+
+  final ActivityType type;
+  final String title;
+  final double amount;
+  final DateTime date;
+  final String description;
+  final String location;
+  final String method;
+
+  String get typeLabel => switch (type) {
+        ActivityType.expense => 'Pengeluaran',
+        ActivityType.income => 'Pemasukan',
+        ActivityType.saving => 'Nabung',
+      };
+}
+
 class Saving {
   Saving({
     required this.name,
@@ -38,18 +66,74 @@ class Saving {
 
 class UkuStore extends ChangeNotifier {
   double budget = 1500000;
+  DateTime budgetMonth = DateTime.now();
   final double income = 1000000;
 
+  final List<FinancialActivity> _otherActivities = [
+    FinancialActivity(
+      type: ActivityType.income,
+      title: 'Pemasukan bulanan',
+      amount: 1000000,
+      date: DateTime(2026, 9, 12),
+      description: 'Pemasukan bulanan',
+    ),
+    FinancialActivity(
+      type: ActivityType.saving,
+      title: 'Jalan - jalan ke Bali',
+      amount: 1000000,
+      date: DateTime(2026, 9, 12),
+      description: 'Setoran tabungan · Liburan',
+    ),
+  ];
+
   final List<Expense> expenses = [
-    Expense(category: 'Pakaian', amount: 200000, date: DateTime(2026, 9, 12), location: 'Mall', purpose: 'Kebutuhan', method: 'Cash'),
+    Expense(
+        category: 'Pakaian',
+        amount: 200000,
+        date: DateTime(2026, 9, 12),
+        location: 'Mall',
+        purpose: 'Kebutuhan',
+        method: 'Cash'),
   ];
 
   final List<Saving> savings = [
-    Saving(name: 'Jalan - jalan ke Bali', target: 3000000, current: 1000000, note: 'Liburan', category: 'Liburan'),
+    Saving(
+        name: 'Jalan - jalan ke Bali',
+        target: 3000000,
+        current: 1000000,
+        note: 'Liburan',
+        category: 'Liburan'),
   ];
 
   double get totalExpense => expenses.fold(0, (sum, item) => sum + item.amount);
-  double get remainingBudget => budget - totalExpense;
+  double get remainingBudget =>
+      (hasBudgetForMonth(DateTime.now()) ? budget : 0) -
+      expensesForMonth(DateTime.now())
+          .fold(0, (sum, expense) => sum + expense.amount);
+
+  bool hasBudgetForMonth(DateTime month) =>
+      budgetMonth.year == month.year && budgetMonth.month == month.month;
+
+  List<FinancialActivity> get activities => [
+        ...expenses.map((expense) => FinancialActivity(
+              type: ActivityType.expense,
+              title: expense.category,
+              amount: expense.amount,
+              date: expense.date,
+              description: expense.purpose,
+              location: expense.location,
+              method: expense.method,
+            )),
+        ..._otherActivities,
+      ]..sort((a, b) => b.date.compareTo(a.date));
+
+  List<FinancialActivity> activitiesForMonth(DateTime month) {
+    return activities
+        .where((activity) =>
+            activity.date.year == month.year &&
+            activity.date.month == month.month)
+        .toList();
+  }
 
   void addExpense(Expense expense) {
     expenses.insert(0, expense);
@@ -58,21 +142,40 @@ class UkuStore extends ChangeNotifier {
 
   void setBudget(double value) {
     budget = value;
+    budgetMonth = DateTime.now();
     notifyListeners();
   }
 
-  void addSaving(String name, double target, String note, {String category = 'Lainnya'}) {
-    savings.add(Saving(name: name, target: target, current: 0, note: note, category: category));
+  void addSaving(String name, double target, String note,
+      {String category = 'Lainnya'}) {
+    savings.add(Saving(
+        name: name,
+        target: target,
+        current: 0,
+        note: note,
+        category: category));
     notifyListeners();
   }
 
   void addSavingBalance(Saving saving, double amount) {
     saving.current += amount;
+    _otherActivities.insert(
+      0,
+      FinancialActivity(
+        type: ActivityType.saving,
+        title: saving.name,
+        amount: amount,
+        date: DateTime.now(),
+        description: 'Setoran tabungan · ${saving.category}',
+      ),
+    );
     notifyListeners();
   }
 
   List<Expense> expensesForMonth(DateTime month) {
-    return expenses.where((e) => e.date.year == month.year && e.date.month == month.month).toList();
+    return expenses
+        .where((e) => e.date.year == month.year && e.date.month == month.month)
+        .toList();
   }
 
   Map<String, double> categoryTotals([DateTime? month]) {

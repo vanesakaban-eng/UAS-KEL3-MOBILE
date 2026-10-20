@@ -133,6 +133,7 @@ class _SavingScreenState extends State<SavingScreen> {
         ),
       ),
       child: Card(
+        color: const Color(0xFFF0F0F0),
         elevation: 0,
         margin: const EdgeInsets.only(bottom: 10),
         shape: RoundedRectangleBorder(
@@ -200,7 +201,7 @@ class _SavingScreenState extends State<SavingScreen> {
                 value: saving.progress,
                 minHeight: 8,
                 borderRadius: BorderRadius.circular(10),
-                backgroundColor: const Color(0xFFF9C846),
+                backgroundColor: const Color.fromARGB(255, 228, 226, 218),
                 valueColor: const AlwaysStoppedAnimation<Color>(
                   Color(0xFFFAAE36),
                 ),

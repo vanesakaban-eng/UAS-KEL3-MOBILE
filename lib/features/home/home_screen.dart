@@ -14,19 +14,25 @@ class HomeScreenContent extends StatelessWidget {
     this.onBudget,
     this.onRecap,
     this.onSaving,
+    this.onSavingTarget,
+    this.onTransactions,
   });
   final UkuStore store;
   final VoidCallback onExpense;
   final VoidCallback? onBudget;
   final VoidCallback? onRecap;
   final VoidCallback? onSaving;
+  final ValueChanged<Saving>? onSavingTarget;
+  final VoidCallback? onTransactions;
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
         animation: store,
         builder: (context, _) {
-          final latest = store.expenses.isEmpty ? null : store.expenses.first;
+          final activities = store.activities;
+          final latest = activities.isEmpty ? null : activities.first;
+          final featuredSaving = store.latestSaving;
           return SafeArea(
               child: SingleChildScrollView(
                   child: Column(
@@ -136,14 +142,14 @@ class HomeScreenContent extends StatelessWidget {
                                 child: _buildActionCard(
                                     'assets/icons/LoveforMoney.png', 'Nabung',
                                     onTap: onSaving ??
-                                    () => Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                        builder: (_) => SavingScreen(
-                                          store: store,
-                                        ),
-                                          ),
-                                        )))
+                                        () => Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) => SavingScreen(
+                                                  store: store,
+                                                ),
+                                              ),
+                                            )))
                           ]),
                           const SizedBox(height: 16),
                           _buildSectionCard(
@@ -152,14 +158,15 @@ class HomeScreenContent extends StatelessWidget {
                               subtitle: latest == null
                                   ? 'Belum ada transaksi'
                                   : '${latest.date.day}/${latest.date.month}/${latest.date.year}',
-                              onTap: () => Navigator.push<void>(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => TransactionsScreen(
-                                        store: store,
+                              onTap: onTransactions ??
+                                  () => Navigator.push<void>(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => TransactionsScreen(
+                                            store: store,
+                                          ),
+                                        ),
                                       ),
-                                    ),
-                                  ),
                               child: Container(
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 14, vertical: 12),
@@ -168,7 +175,7 @@ class HomeScreenContent extends StatelessWidget {
                                       borderRadius: BorderRadius.circular(10)),
                                   child: Row(children: [
                                     Expanded(
-                                        child: Text(latest?.category ?? '-',
+                                        child: Text(latest?.title ?? '-',
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                             style: const TextStyle(
@@ -177,7 +184,7 @@ class HomeScreenContent extends StatelessWidget {
                                     Text(
                                         latest == null
                                             ? '-'
-                                            : '- ${rupiah(latest.amount)}',
+                                            : '${latest.type == ActivityType.expense ? '-' : '+'} ${rupiah(latest.amount)}',
                                         style: const TextStyle(
                                             fontWeight: FontWeight.bold))
                                   ]))),
@@ -185,7 +192,7 @@ class HomeScreenContent extends StatelessWidget {
                           _buildSectionCard(
                               title: 'Nabung',
                               iconPath: 'assets/icons/LoveforMoney.png',
-                              onTap: store.savings.isEmpty
+                              onTap: featuredSaving == null
                                   ? onSaving ??
                                       () => Navigator.push(
                                             context,
@@ -195,16 +202,21 @@ class HomeScreenContent extends StatelessWidget {
                                               ),
                                             ),
                                           )
-                                  : () => Navigator.push<void>(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => SavingDetailScreen(
-                                            store: store,
-                                            saving: store.savings.first,
+                                  : onSavingTarget != null
+                                      ? () => onSavingTarget!(
+                                            featuredSaving,
+                                          )
+                                      : () => Navigator.push<void>(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) =>
+                                                  SavingDetailScreen(
+                                                store: store,
+                                                saving: featuredSaving,
+                                              ),
+                                            ),
                                           ),
-                                        ),
-                                      ),
-                              child: store.savings.isEmpty
+                              child: featuredSaving == null
                                   ? const Text('Belum ada target tabungan',
                                       style: TextStyle(
                                           color: Colors.grey, fontSize: 11))
@@ -221,14 +233,14 @@ class HomeScreenContent extends StatelessWidget {
                                                 crossAxisAlignment:
                                                     CrossAxisAlignment.start,
                                                 children: [
-                                              Text(store.savings.first.name,
+                                              Text(featuredSaving.name,
                                                   maxLines: 1,
                                                   overflow:
                                                       TextOverflow.ellipsis,
                                                   style: const TextStyle(
                                                       fontWeight:
                                                           FontWeight.w500)),
-                                              Text(store.savings.first.note,
+                                              Text(featuredSaving.note,
                                                   maxLines: 1,
                                                   overflow:
                                                       TextOverflow.ellipsis,
@@ -238,7 +250,7 @@ class HomeScreenContent extends StatelessWidget {
                                             ])),
                                         const SizedBox(width: 8),
                                         Text(
-                                            '+ ${rupiah(store.savings.first.current)}',
+                                            '+ ${rupiah(featuredSaving.current)}',
                                             style: const TextStyle(
                                                 fontWeight: FontWeight.bold))
                                       ]))),

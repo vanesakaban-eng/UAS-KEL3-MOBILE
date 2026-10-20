@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:uku_app/data/uku_store.dart';
 import 'package:uku_app/features/savings/saving_categories.dart';
 import 'package:uku_app/features/savings/saving_details_screen.dart';
+import 'package:uku_app/widgets/app_back_button.dart';
 
 class SavingCreationScreen extends StatefulWidget {
   const SavingCreationScreen({super.key, required this.store});
@@ -47,13 +48,8 @@ class _SavingCreationScreenState extends State<SavingCreationScreen> {
                   Positioned(
                     left: 0,
                     top: 12,
-                    child: IconButton(
-                      tooltip: 'Kembali',
+                    child: AppBackButton(
                       onPressed: () => Navigator.of(context).maybePop(),
-                      icon: const Icon(
-                        Icons.arrow_back,
-                        color: Color(0xFFFAAE36),
-                      ),
                     ),
                   ),
                   Align(
@@ -79,6 +75,7 @@ class _SavingCreationScreenState extends State<SavingCreationScreen> {
                 children: [
                   const Text(
                     'Pilih jenis tabungan',
+                    textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
@@ -123,9 +120,8 @@ class _SavingCreationScreenState extends State<SavingCreationScreen> {
                   width: 52,
                   height: 52,
                   decoration: BoxDecoration(
-                    color: selected
-                        ? const Color(0xFFF9C846)
-                        : Colors.transparent,
+                    color:
+                        selected ? const Color(0xFFF9C846) : Colors.transparent,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: selected

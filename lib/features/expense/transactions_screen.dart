@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:uku_app/data/uku_store.dart';
+import 'package:uku_app/widgets/app_back_button.dart';
 
 class TransactionsScreen extends StatelessWidget {
   const TransactionsScreen({super.key, required this.store, this.onBack});
@@ -25,14 +26,11 @@ class TransactionsScreen extends StatelessWidget {
                 child: Stack(
                   children: [
                     Positioned(
-                      left: 16,
+                      left: 0,
                       top: 12,
-                      child: IconButton(
-                        tooltip: 'Kembali',
+                      child: AppBackButton(
                         onPressed:
                             onBack ?? () => Navigator.of(context).maybePop(),
-                        icon: const Icon(Icons.arrow_back,
-                            color: Color(0xFFFAAE36)),
                       ),
                     ),
                     Align(
@@ -64,8 +62,7 @@ class TransactionsScreen extends StatelessWidget {
                     : ListView.separated(
                         padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                         itemCount: activities.length + 1,
-                        separatorBuilder: (_, __) =>
-                            const SizedBox(height: 8),
+                        separatorBuilder: (_, __) => const SizedBox(height: 8),
                         itemBuilder: (context, index) {
                           if (index == 0) {
                             return Padding(
@@ -121,7 +118,15 @@ class _ActivityDetails extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color),
+          if (activity.iconPath case final iconPath?)
+            Image.asset(
+              iconPath,
+              width: 24,
+              height: 24,
+              fit: BoxFit.contain,
+            )
+          else
+            Icon(icon, color: color),
           const SizedBox(width: 10),
           Expanded(
             child: Column(

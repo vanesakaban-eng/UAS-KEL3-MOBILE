@@ -5,6 +5,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 import 'package:uku_app/data/uku_store.dart';
+import 'package:uku_app/widgets/app_back_button.dart';
 
 class MonthlyExpenseScreen extends StatefulWidget {
   const MonthlyExpenseScreen({super.key, required this.store, this.onBack});
@@ -106,12 +107,9 @@ class _MonthlyExpenseScreenState extends State<MonthlyExpenseScreen> {
                     Positioned(
                       left: 0,
                       top: 12,
-                      child: IconButton(
-                        tooltip: 'Kembali',
+                      child: AppBackButton(
                         onPressed: widget.onBack ??
                             () => Navigator.of(context).maybePop(),
-                        icon: const Icon(Icons.arrow_back,
-                            color: Color(0xFFFAAE36)),
                       ),
                     ),
                     Align(

@@ -253,6 +253,42 @@ void main() {
     expect(didGoBack, isTrue);
   });
 
+  testWidgets(
+      'transaction history uses category icons for expenses and savings',
+      (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final store = UkuStore();
+    store.addExpense(Expense(
+      category: 'Makanan & Minuman',
+      amount: 25000,
+      date: DateTime.now(),
+      location: '',
+      purpose: '',
+      method: 'Tunai',
+    ));
+    store.addSavingBalance(store.savings.first, 100000);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: TransactionsScreen(store: store)),
+      ),
+    );
+
+    Finder findAsset(String path) => find.byWidgetPredicate((widget) {
+          if (widget is! Image) return false;
+          final image = widget.image;
+          return image is AssetImage && image.assetName == path;
+        });
+
+    expect(findAsset('assets/icons/Restaurant.png'), findsOneWidget);
+    expect(findAsset('assets/icons/Airplane Landing.png'), findsWidgets);
+    expect(findAsset('assets/icons/Clothes.png'), findsOneWidget);
+  });
+
   testWidgets('recap history includes expenses, income and saving activity',
       (tester) async {
     final store = UkuStore();
@@ -323,6 +359,50 @@ void main() {
     await tester.tap(find.byTooltip('Kembali'));
     await tester.pumpAndSettle();
     expect(find.text('Grafik Pengeluaran'), findsNothing);
+  });
+
+  testWidgets('home transaction card opens the Transactions navigation page',
+      (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(home: MainNavigationScreen()),
+    );
+
+    await tester.tap(find.text('Pakaian'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Riwayat Transaksi'), findsOneWidget);
+    expect(find.text('Metode: Cash'), findsOneWidget);
+    expect(find.text('Beranda'), findsOneWidget);
+    expect(find.text('Pengeluaran'), findsOneWidget);
+    expect(find.text('Budget'), findsOneWidget);
+    expect(find.text('Transaksi'), findsOneWidget);
+    await tester.tap(find.byTooltip('Kembali'));
+    await tester.pumpAndSettle();
+    expect(find.text('Halo, User'), findsOneWidget);
+  });
+
+  testWidgets('home saving target detail keeps the main navigation visible',
+      (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(home: MainNavigationScreen()),
+    );
+
+    final savingTarget = find.text('Jalan - jalan ke Bali');
+    await tester.ensureVisible(savingTarget);
+    await tester.tap(savingTarget);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Detail Tabungan'), findsOneWidget);
+    expect(find.text('Jenis tabungan'), findsOneWidget);
+    expect(find.text('Beranda'), findsOneWidget);
+    expect(find.text('Pengeluaran'), findsOneWidget);
+    expect(find.text('Budget'), findsOneWidget);
+    expect(find.text('Transaksi'), findsOneWidget);
   });
 
   testWidgets('newly recorded expense appears with the seeded history',

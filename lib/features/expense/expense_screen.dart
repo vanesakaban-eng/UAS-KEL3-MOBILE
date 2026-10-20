@@ -1,11 +1,14 @@
 import 'dart:typed_data';
 
 import 'package:camera/camera.dart';
-import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:uku_app/data/category_icons.dart';
 import 'package:uku_app/data/uku_store.dart';
 import 'package:uku_app/features/ai/ai_screen.dart';
+import 'package:uku_app/widgets/app_back_button.dart';
 
 class ExpenseScreen extends StatefulWidget {
   const ExpenseScreen({super.key, required this.store});
@@ -41,18 +44,18 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
   static const inputModes = ['Manual', 'Foto Bill', 'AIku'];
 
   static const categories = [
-    (name: 'Makanan & Minuman', asset: 'assets/icons/Restaurant.png'),
-    (name: 'Hiburan', asset: 'assets/icons/3D Glasses.png'),
-    (name: 'Pendidikan', asset: 'assets/icons/Online Group Studying.png'),
-    (name: 'Donasi', asset: 'assets/icons/Charity.png'),
-    (name: 'Pakaian', asset: 'assets/icons/Clothes.png'),
-    (name: 'Kebutuhan Rumah', asset: 'assets/icons/House.png'),
-    (name: 'Transportasi', asset: 'assets/icons/Public Transportation.png'),
-    (name: 'Kecantikan', asset: 'assets/icons/Beautician.png'),
-    (name: 'Liburan', asset: 'assets/icons/Airplane Landing.png'),
-    (name: 'Kesehatan', asset: 'assets/icons/Hospital Room.png'),
-    (name: 'Belanja', asset: 'assets/icons/Shopping Bag.png'),
-    (name: 'Hewan Peliharaan', asset: 'assets/icons/Pet Commands Summon.png'),
+    'Makanan & Minuman',
+    'Hiburan',
+    'Pendidikan',
+    'Donasi',
+    'Pakaian',
+    'Kebutuhan Rumah',
+    'Transportasi',
+    'Kecantikan',
+    'Liburan',
+    'Kesehatan',
+    'Belanja',
+    'Hewan Peliharaan',
   ];
   final methods = const ['Tunai', 'Bank', 'Qris'];
 
@@ -300,14 +303,10 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                       ),
                     Positioned(
                       top: 12,
-                      left: 8,
-                      child: IconButton(
+                      left: 0,
+                      child: AppBackButton(
                         tooltip: 'Kembali ke kategori',
                         onPressed: _closeBillCamera,
-                        icon: const Icon(
-                          Icons.arrow_back,
-                          color: Color(0xFFFF8800),
-                        ),
                       ),
                     ),
                     Positioned(
@@ -328,10 +327,10 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                             tooltip: 'Ambil foto',
                             icon: Icons.camera_alt_outlined,
                             onPressed: _usesDesktopCamera
-                              ? _cameraController?.value.isInitialized == true
-                                ? _captureDesktopImage
-                                : null
-                              : () => _pickBillImage(ImageSource.camera),
+                                ? _cameraController?.value.isInitialized == true
+                                    ? _captureDesktopImage
+                                    : null
+                                : () => _pickBillImage(ImageSource.camera),
                           ),
                           const SizedBox(width: 20),
                           _cameraActionButton(
@@ -450,13 +449,8 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                   Positioned(
                     left: 0,
                     top: 12,
-                    child: IconButton(
-                      tooltip: 'Kembali',
+                    child: AppBackButton(
                       onPressed: () => Navigator.of(context).maybePop(),
-                      icon: const Icon(
-                        Icons.arrow_back,
-                        color: Color(0xFFFAAE36),
-                      ),
                     ),
                   ),
                   Align(
@@ -500,13 +494,13 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                 ),
                 itemBuilder: (context, index) {
                   final item = categories[index];
-                  final selected = category == item.name;
+                  final selected = category == item;
                   return Semantics(
                     button: true,
                     selected: selected,
-                    label: item.name,
+                    label: item,
                     child: InkWell(
-                      onTap: () => _selectCategory(item.name),
+                      onTap: () => _selectCategory(item),
                       borderRadius: BorderRadius.circular(10),
                       child: Column(
                         children: [
@@ -527,7 +521,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                             ),
                             alignment: Alignment.center,
                             child: Image.asset(
-                              item.asset,
+                              categoryIconPath(item),
                               width: 42,
                               height: 42,
                               fit: BoxFit.contain,
@@ -535,7 +529,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                           ),
                           const SizedBox(height: 3),
                           Text(
-                            item.name,
+                            item,
                             textAlign: TextAlign.center,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,

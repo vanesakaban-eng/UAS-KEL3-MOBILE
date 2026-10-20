@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:uku_app/data/category_icons.dart';
 
 class Expense {
   Expense({
@@ -29,6 +30,7 @@ class FinancialActivity {
     this.description = '',
     this.location = '',
     this.method = '',
+    this.iconPath,
   });
 
   final ActivityType type;
@@ -38,6 +40,7 @@ class FinancialActivity {
   final String description;
   final String location;
   final String method;
+  final String? iconPath;
 
   String get typeLabel => switch (type) {
         ActivityType.expense => 'Pengeluaran',
@@ -83,6 +86,7 @@ class UkuStore extends ChangeNotifier {
       amount: 1000000,
       date: DateTime(2026, 9, 12),
       description: 'Setoran tabungan · Liburan',
+      iconPath: categoryIconPathOrNull('Liburan'),
     ),
   ];
 
@@ -106,6 +110,8 @@ class UkuStore extends ChangeNotifier {
   ];
 
   double get totalExpense => expenses.fold(0, (sum, item) => sum + item.amount);
+  Saving? get latestSaving => savings.isEmpty ? null : savings.last;
+
   double get remainingBudget =>
       (hasBudgetForMonth(DateTime.now()) ? budget : 0) -
       expensesForMonth(DateTime.now())
@@ -123,6 +129,7 @@ class UkuStore extends ChangeNotifier {
               description: expense.purpose,
               location: expense.location,
               method: expense.method,
+              iconPath: categoryIconPathOrNull(expense.category),
             )),
         ..._otherActivities,
       ]..sort((a, b) => b.date.compareTo(a.date));
@@ -167,6 +174,8 @@ class UkuStore extends ChangeNotifier {
         amount: amount,
         date: DateTime.now(),
         description: 'Setoran tabungan · ${saving.category}',
+        iconPath: categoryIconPathOrNull(saving.category) ??
+            'assets/icons/LoveforMoney.png',
       ),
     );
     notifyListeners();

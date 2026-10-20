@@ -22,7 +22,7 @@ void main() {
     await tester.tap(find.text('Liburan'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Detail Tabungan'), findsOneWidget);
+    expect(find.text('Nama Tabungan'), findsOneWidget);
     await tester.enterText(find.byType(TextFormField).at(0), 'Dana Liburan');
     await tester.enterText(find.byType(TextFormField).at(1), '2500000');
     await tester.tap(find.widgetWithText(ElevatedButton, 'Buat Tabungan'));
@@ -61,27 +61,41 @@ void main() {
     );
   });
 
-  testWidgets('detail footer uses the saving action style and adds balance',
+  testWidgets('saving detail shows saved values in the read-only form',
       (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     final store = UkuStore();
     final saving = store.savings.first;
+    var didGoBack = false;
 
     await tester.pumpWidget(
       MaterialApp(
-        home: SavingDetailScreen(store: store, saving: saving),
+        home: SavingDetailScreen(
+          store: store,
+          saving: saving,
+          onBack: () => didGoBack = true,
+        ),
       ),
     );
 
-    final addBalanceButton = find.widgetWithText(TextButton, 'Tambah saldo');
-    expect(addBalanceButton, findsOneWidget);
-    await tester.tap(addBalanceButton);
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), '250000');
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Tambah'));
-    await tester.pumpAndSettle();
-
-    expect(saving.current, 1250000);
-    expect(store.activities.first.amount, 250000);
+    expect(find.text('Detail Tabungan'), findsOneWidget);
+    expect(find.text('Nama tabungan'), findsOneWidget);
+    expect(find.text(saving.name), findsOneWidget);
+    expect(find.text('Target tabungan'), findsOneWidget);
+    expect(find.text('Rp 3.000.000'), findsOneWidget);
+    expect(find.text('Catatan'), findsOneWidget);
+    expect(find.text(saving.note), findsNWidgets(2));
+    expect(find.text('Jenis tabungan'), findsOneWidget);
+    expect(find.text('Liburan'), findsNWidgets(2));
+    expect(find.widgetWithText(ElevatedButton, 'Kembali'), findsOneWidget);
+    expect(find.byType(TextField), findsNothing);
+    expect(find.byType(LinearProgressIndicator), findsNothing);
+    expect(find.text('Tambah saldo'), findsNothing);
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Kembali'));
+    expect(didGoBack, isTrue);
   });
 
   testWidgets('opens saving creation from the Home Nabung button',
@@ -106,10 +120,10 @@ void main() {
     expect(find.text('Target Tabungan'), findsOneWidget);
     await tester.tap(find.widgetWithText(TextButton, 'Tambah'));
     await tester.pumpAndSettle();
-    expect(find.text('Buat Tabungan'), findsOneWidget);
+    expect(find.text('Pilih jenis tabungan'), findsOneWidget);
     await tester.tap(find.text('Makanan & Minuman'));
     await tester.pumpAndSettle();
-    expect(find.text('Detail Tabungan'), findsOneWidget);
+    expect(find.text('Nama Tabungan'), findsOneWidget);
     expect(find.text('Makanan & Minuman'), findsOneWidget);
   });
 
@@ -137,6 +151,49 @@ void main() {
 
     expect(find.byType(SavingDetailScreen), findsOneWidget);
     expect(find.text('Detail Tabungan'), findsOneWidget);
+    expect(find.text(saving.name), findsOneWidget);
+    expect(find.text('Rp 3.000.000'), findsOneWidget);
+    expect(find.text('Jenis tabungan'), findsOneWidget);
+  });
+
+  testWidgets('Home features the newest saving while Nabung keeps old savings',
+      (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final store = UkuStore()
+      ..addSaving(
+        'Tabungan Baru',
+        2500000,
+        'Rencana baru',
+        category: 'Liburan',
+      );
+    var selectedSavingName = '';
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: HomeScreenContent(
+            store: store,
+            onExpense: () {},
+            onSavingTarget: (saving) => selectedSavingName = saving.name,
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Tabungan Baru'), findsOneWidget);
+    expect(find.text('Jalan - jalan ke Bali'), findsNothing);
+    await tester.ensureVisible(find.text('Tabungan Baru'));
+    await tester.tap(find.text('Tabungan Baru'));
+    expect(selectedSavingName, 'Tabungan Baru');
+
+    await tester.pumpWidget(
+      MaterialApp(home: SavingScreen(store: store)),
+    );
+    expect(find.text('Tabungan Baru'), findsOneWidget);
+    expect(find.text('Jalan - jalan ke Bali'), findsOneWidget);
   });
 
   testWidgets('tapping a saving target opens its detail page', (tester) async {

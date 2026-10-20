@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:uku_app/data/uku_store.dart';
+import 'package:uku_app/widgets/app_back_button.dart';
 
 class BudgetScreen extends StatefulWidget {
   const BudgetScreen({super.key, required this.store});
@@ -61,23 +62,27 @@ class _BudgetScreenState extends State<BudgetScreen> {
             child: Column(
               children: [
                 SizedBox(
-                  height: 56,
+                  height: 100,
                   child: Stack(
-                    alignment: Alignment.center,
                     children: [
-                      const Text(
-                        'Budget',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
+                      Positioned(
+                        left: 0,
+                        top: 12,
+                        child: AppBackButton(
+                          onPressed: () => setState(() => _isEditing = false),
                         ),
                       ),
                       Align(
-                        alignment: Alignment.centerLeft,
-                        child: IconButton(
-                          onPressed: () => setState(() => _isEditing = false),
-                          icon: const Icon(Icons.arrow_back),
-                          color: Color(0xFFFAAE36),
+                        alignment: Alignment.topCenter,
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 58),
+                          child: const Text(
+                            'Budget',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                       ),
                     ],
@@ -92,8 +97,8 @@ class _BudgetScreenState extends State<BudgetScreen> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: const [
                         BoxShadow(
-                          color: Color(0x22000000),
-                          blurRadius: 9,
+                          color: Color(0x1F000000),
+                          blurRadius: 8,
                           offset: Offset(0, 3),
                         ),
                       ],
@@ -313,11 +318,11 @@ class _BudgetScreenState extends State<BudgetScreen> {
                               ),
                               const SizedBox(width: 6),
                               Image.asset(
-                              'assets/icons/Budget (1).png',
-                              width: 24,
-                              height: 24,
-                              fit: BoxFit.contain,
-                            ),
+                                'assets/icons/Budget (1).png',
+                                width: 24,
+                                height: 24,
+                                fit: BoxFit.contain,
+                              ),
                             ],
                           ),
                           const SizedBox(height: 2),

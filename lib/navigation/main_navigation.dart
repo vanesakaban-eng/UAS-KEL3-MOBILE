@@ -6,6 +6,7 @@ import 'package:uku_app/features/expense/monthly_expense_screen.dart';
 import 'package:uku_app/features/expense/recap_screen.dart';
 import 'package:uku_app/features/expense/transactions_screen.dart';
 import 'package:uku_app/features/home/home_screen.dart';
+import 'package:uku_app/features/savings/saving_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -17,6 +18,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   final UkuStore store = UkuStore();
   int currentIndex = 0;
   bool showRecap = false;
+  bool showSavings = false;
+  Saving? selectedSaving;
 
   void openExpense() {
     Navigator.push<void>(
@@ -29,6 +32,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   void openBudget() => setState(() => currentIndex = 2);
 
+  void openSavings([Saving? saving]) {
+    setState(() {
+      currentIndex = 0;
+      showRecap = false;
+      showSavings = true;
+      selectedSaving = saving;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     const destinations = [
@@ -38,7 +50,16 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       (label: 'Transaksi'),
     ];
     final pages = [
-      if (showRecap)
+      if (showSavings)
+        SavingScreen(
+          store: store,
+          initialSaving: selectedSaving,
+          onBack: () => setState(() {
+            showSavings = false;
+            selectedSaving = null;
+          }),
+        )
+      else if (showRecap)
         RecapScreen(
           store: store,
           onBack: () => setState(() => showRecap = false),
@@ -49,6 +70,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           onExpense: openExpense,
           onBudget: openBudget,
           onRecap: () => setState(() => showRecap = true),
+          onSaving: () => openSavings(),
+          onSavingTarget: openSavings,
+          onTransactions: () => setState(() => currentIndex = 3),
         ),
       MonthlyExpenseScreen(
         store: store,
@@ -82,6 +106,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                         onTap: () => setState(() {
                           currentIndex = index;
                           showRecap = false;
+                          showSavings = false;
+                          selectedSaving = null;
                         }),
                         child: SizedBox.expand(
                           child: Column(

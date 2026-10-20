@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:uku_app/data/uku_store.dart';
+import 'package:uku_app/widgets/app_back_button.dart';
 
 enum _AiMessageRole { user, ai }
 
@@ -117,12 +118,10 @@ class _AiScreenState extends State<AiScreen> {
                 children: [
                   Row(
                     children: [
-                      IconButton(
-                        tooltip: 'Kembali',
-                        onPressed: () => Navigator.of(context).maybePop(),
-                        icon: const Icon(
-                          Icons.arrow_back,
-                          color: Color(0xFFFAAE36),
+                      Transform.translate(
+                        offset: const Offset(-16, 0),
+                        child: AppBackButton(
+                          onPressed: () => Navigator.of(context).maybePop(),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -188,7 +187,6 @@ class _AiScreenState extends State<AiScreen> {
                       ],
                     ),
                   ),
-                  
                   const SizedBox(height: 10),
                   Center(
                     child: Container(
@@ -197,149 +195,147 @@ class _AiScreenState extends State<AiScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           const SizedBox(width: 7),
-                        const Text(
-                          'AIKu',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                          const Text(
+                            'AIKu',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                        Container(
-                          width: 38,
-                          height: 38,
-                          child: Image.asset(
-                            'assets/icons/AI.png',
-                            width: 24,
-                            height: 24,
-                            fit: BoxFit.contain,
+                          Container(
+                            width: 38,
+                            height: 38,
+                            child: Image.asset(
+                              'assets/icons/AI.png',
+                              width: 24,
+                              height: 24,
+                              fit: BoxFit.contain,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
                   )
                 ],
               ),
             ),
-Expanded(
-  child: Container(
-    margin: const EdgeInsets.symmetric(horizontal: 16),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(20),
-      boxShadow: const [
-        BoxShadow(
-          color: Color(0x1F000000),
-          blurRadius: 8,
-          offset: Offset(0, 3),
-        ),
-      ],
-    ),
-    child: ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
-      itemCount: _aiMessages.length + (_isAiReplying ? 1 : 0),
-      itemBuilder: (context, index) {
-        if (index == _aiMessages.length && _isAiReplying) {
-          return _buildTypingIndicator();
-        }
+            Expanded(
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x1F000000),
+                      blurRadius: 8,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+                  itemCount: _aiMessages.length + (_isAiReplying ? 1 : 0),
+                  itemBuilder: (context, index) {
+                    if (index == _aiMessages.length && _isAiReplying) {
+                      return _buildTypingIndicator();
+                    }
 
-        final message = _aiMessages[index];
+                    final message = _aiMessages[index];
 
-        return Align(
-          alignment: message.role == _AiMessageRole.user
-              ? Alignment.centerRight
-              : Alignment.centerLeft,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 330),
-            child: Container(
-              padding: const EdgeInsets.all(13),
-              decoration: BoxDecoration(
-                color: message.role == _AiMessageRole.user
-                    ? const Color(0xFFFAAE36)
-                    : Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: message.role == _AiMessageRole.ai
-                    ? Border.all(color: Colors.black12)
-                    : null,
-                boxShadow: message.role == _AiMessageRole.ai
-                    ? const [
-                        BoxShadow(
-                          color: Color(0x1F000000),
-                          blurRadius: 5,
-                          offset: Offset(0, 2),
+                    return Align(
+                      alignment: message.role == _AiMessageRole.user
+                          ? Alignment.centerRight
+                          : Alignment.centerLeft,
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 330),
+                        child: Container(
+                          padding: const EdgeInsets.all(13),
+                          decoration: BoxDecoration(
+                            color: message.role == _AiMessageRole.user
+                                ? const Color(0xFFFAAE36)
+                                : Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: message.role == _AiMessageRole.ai
+                                ? Border.all(color: Colors.black12)
+                                : null,
+                            boxShadow: message.role == _AiMessageRole.ai
+                                ? const [
+                                    BoxShadow(
+                                      color: Color(0x1F000000),
+                                      blurRadius: 5,
+                                      offset: Offset(0, 2),
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          child: Text(
+                            message.text,
+                            style: TextStyle(
+                              color: message.role == _AiMessageRole.user
+                                  ? Colors.white
+                                  : Colors.black87,
+                              height: 1.35,
+                            ),
+                          ),
                         ),
-                      ]
-                    : null,
-              ),
-              child: Text(
-                message.text,
-                style: TextStyle(
-                  color: message.role == _AiMessageRole.user
-                      ? Colors.white
-                      : Colors.black87,
-                  height: 1.35,
+                      ),
+                    );
+                  },
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
                 ),
               ),
             ),
-          ),
-        );
-      },
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
-    ),
-  ),
-),
-
-const SizedBox(height: 10),
-
-Container(
-  padding: const EdgeInsets.all(8),
-  child: Row(
-    children: [
-      Expanded(
-        child: TextField(
-          controller: _aiInput,
-          onSubmitted: (_) => _sendAiMessage(),
-          decoration: InputDecoration(
-            hintText: 'Tulis pertanyaan...',
-            hintStyle: const TextStyle(color: Colors.black38),
-            isDense: true,
-            filled: true,
-            fillColor: const Color(0xFFF5F5F5),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide.none,
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _aiInput,
+                      onSubmitted: (_) => _sendAiMessage(),
+                      decoration: InputDecoration(
+                        hintText: 'Tulis pertanyaan...',
+                        hintStyle: const TextStyle(color: Colors.black38),
+                        isDense: true,
+                        filled: true,
+                        fillColor: const Color(0xFFF5F5F5),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    width: 48,
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed: _isAiReplying ? null : _sendAiMessage,
+                      style: ElevatedButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        backgroundColor: const Color(0xFFFAAE36),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.send,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 12,
-            ),
-          ),
+          ],
         ),
-      ),
-      const SizedBox(width: 8),
-      SizedBox(
-        width: 48,
-        height: 48,
-        child: ElevatedButton(
-          onPressed: _isAiReplying ? null : _sendAiMessage,
-          style: ElevatedButton.styleFrom(
-            padding: EdgeInsets.zero,
-            backgroundColor: const Color(0xFFFAAE36),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-          ),
-          child: const Icon(
-            Icons.send,
-            color: Colors.white,
-          ),
-        ),
-      ),
-    ],
-  ),
-),
-        ],
-      ),
       ),
     );
   }

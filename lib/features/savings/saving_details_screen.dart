@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:uku_app/data/uku_store.dart';
 import 'package:uku_app/features/savings/saving_categories.dart';
+import 'package:uku_app/widgets/app_back_button.dart';
 
 class SavingDetailsScreen extends StatefulWidget {
   const SavingDetailsScreen({
@@ -85,13 +86,8 @@ class _SavingDetailsScreenState extends State<SavingDetailsScreen> {
                   Positioned(
                     left: 0,
                     top: 12,
-                    child: IconButton(
-                      tooltip: 'Kembali',
+                    child: AppBackButton(
                       onPressed: () => Navigator.of(context).maybePop(),
-                      icon: const Icon(
-                        Icons.arrow_back,
-                        color: Color(0xFFFAAE36),
-                      ),
                     ),
                   ),
                   Align(
@@ -99,7 +95,7 @@ class _SavingDetailsScreenState extends State<SavingDetailsScreen> {
                     child: Padding(
                       padding: const EdgeInsets.only(top: 58),
                       child: const Text(
-                        'Detail Tabungan',
+                        'Buat Tabungan',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 20,
@@ -113,7 +109,6 @@ class _SavingDetailsScreenState extends State<SavingDetailsScreen> {
             ),
             Expanded(
               child: Container(
-                
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(20),

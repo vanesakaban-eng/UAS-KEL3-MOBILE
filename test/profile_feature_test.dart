@@ -1,6 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:uku_app/data/profile_settings_repository.dart';
 import 'package:uku_app/features/profile/edit_profil.dart';
+
+class _FakeProfileSettingsRepository implements ProfileSettingsRepository {
+  ProfileSettings profile = const ProfileSettings();
+
+  @override
+  Future<void> clearSecret() async {}
+
+  @override
+  Future<ProfileSettings> load() async => profile;
+
+  @override
+  Future<void> save(ProfileSettings value, {String? password}) async {
+    profile = value;
+  }
+}
 
 void main() {
   testWidgets('profile edit matches the requested form layout', (tester) async {
@@ -9,9 +25,12 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(
-      const MaterialApp(home: EditProfileScreen()),
-    );
+    await tester.pumpWidget(MaterialApp(
+      home: EditProfileScreen(
+        repository: _FakeProfileSettingsRepository(),
+      ),
+    ));
+    await tester.pump();
 
     expect(find.text('Edit Profil'), findsOneWidget);
     expect(find.text('Nama'), findsOneWidget);

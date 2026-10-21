@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:uku_app/data/profile_settings_repository.dart';
 import 'package:uku_app/features/auth/login_screen.dart';
 import 'package:uku_app/widgets/app_back_button.dart';
 
 class EditProfileScreen extends StatefulWidget {
-  const EditProfileScreen({super.key});
+  const EditProfileScreen({super.key, this.repository});
+
+  final ProfileSettingsRepository? repository;
 
   @override
   State<EditProfileScreen> createState() => _EditProfileScreenState();
@@ -12,9 +15,73 @@ class EditProfileScreen extends StatefulWidget {
 class _EditProfileScreenState extends State<EditProfileScreen> {
   static const _orange = Color(0xFFFF9200);
   bool _showPassword = false;
+  late final ProfileSettingsRepository _repository =
+      widget.repository ?? LocalProfileSettingsRepository();
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _usernameController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _phoneNumberController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _usernameController.dispose();
+    _passwordController.dispose();
+    _phoneNumberController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadProfile() async {
+    try {
+      final profile = await _repository.load();
+      if (!mounted) return;
+      _nameController.text = profile.name;
+      _emailController.text = profile.email;
+      _usernameController.text = profile.username;
+      _phoneNumberController.text = profile.phoneNumber;
+    } on Exception {
+      if (mounted) _showStorageError();
+    }
+  }
+
+  Future<void> _saveProfile() async {
+    try {
+      await _repository.save(
+        ProfileSettings(
+          name: _nameController.text.trim(),
+          email: _emailController.text.trim(),
+          username: _usernameController.text.trim(),
+          phoneNumber: _phoneNumberController.text.trim(),
+        ),
+        password: _passwordController.text.isEmpty
+            ? null
+            : _passwordController.text,
+      );
+      if (mounted) Navigator.pop(context);
+    } on Exception {
+      if (mounted) _showStorageError();
+    }
+  }
+
+  void _showStorageError() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Gagal mengakses penyimpanan profil. Coba lagi.'),
+      ),
+    );
+  }
 
   Widget _buildInputGroup(
     String label, {
+    required TextEditingController controller,
     bool isPassword = false,
     TextInputType? keyboardType,
   }) {
@@ -35,6 +102,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           SizedBox(
             height: 34,
             child: TextFormField(
+              controller: controller,
               obscureText: isPassword && !_showPassword,
               keyboardType: keyboardType,
               style: const TextStyle(fontSize: 11),
@@ -89,7 +157,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  void _logout() {
+  Future<void> _logout() async {
+    try {
+      await _repository.clearSecret();
+    } on Exception {
+      if (mounted) _showStorageError();
+      return;
+    }
+    if (!mounted) return;
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (context) => const LoginScreen()),
@@ -129,7 +204,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           top: 12,
                           child: IconButton(
                             tooltip: 'Simpan profil',
-                            onPressed: () => Navigator.pop(context),
+                            onPressed: _saveProfile,
                             icon: const Icon(
                               Icons.check,
                               color: _orange,
@@ -178,13 +253,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  _buildInputGroup('Nama'),
-                  _buildInputGroup('Email',
+                  _buildInputGroup('Nama', controller: _nameController),
+                  _buildInputGroup('Email', controller: _emailController,
                       keyboardType: TextInputType.emailAddress),
-                  _buildInputGroup('Username'),
-                  _buildInputGroup('Password', isPassword: true),
+                  _buildInputGroup('Username',
+                      controller: _usernameController),
+                  _buildInputGroup('Password',
+                      controller: _passwordController, isPassword: true),
                   _buildInputGroup(
                     'Nomor Telepon',
+                    controller: _phoneNumberController,
                     keyboardType: TextInputType.phone,
                   ),
                   const SizedBox(height: 2),

@@ -5,6 +5,7 @@ import 'package:uku_app/features/profile/edit_profil.dart';
 
 class _FakeProfileSettingsRepository implements ProfileSettingsRepository {
   ProfileSettings profile = const ProfileSettings();
+  String? password = 'saved-password';
 
   @override
   Future<void> clearSecret() async {}
@@ -13,8 +14,12 @@ class _FakeProfileSettingsRepository implements ProfileSettingsRepository {
   Future<ProfileSettings> load() async => profile;
 
   @override
+  Future<String?> loadPassword() async => password;
+
+  @override
   Future<void> save(ProfileSettings value, {String? password}) async {
     profile = value;
+    this.password = password;
   }
 }
 
@@ -46,6 +51,7 @@ void main() {
       find.byType(EditableText).at(3),
     );
     expect(password.obscureText, isTrue);
+    expect(password.controller.text, 'saved-password');
 
     await tester.tap(find.byTooltip('Tampilkan password'));
     await tester.pump();

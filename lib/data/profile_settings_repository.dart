@@ -18,6 +18,8 @@ class ProfileSettings {
 abstract interface class ProfileSettingsRepository {
   Future<ProfileSettings> load();
 
+  Future<String?> loadPassword();
+
   Future<void> save(ProfileSettings profile, {String? password});
 
   Future<void> clearSecret();
@@ -46,6 +48,9 @@ class LocalProfileSettingsRepository implements ProfileSettingsRepository {
       phoneNumber: preferences.getString(_phoneNumberKey) ?? '',
     );
   }
+
+  @override
+  Future<String?> loadPassword() => _secureStorage.read(key: _passwordKey);
 
   @override
   Future<void> save(ProfileSettings profile, {String? password}) async {

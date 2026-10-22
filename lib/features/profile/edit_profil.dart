@@ -42,10 +42,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Future<void> _loadProfile() async {
     try {
       final profile = await _repository.load();
+      final password = await _repository.loadPassword();
       if (!mounted) return;
       _nameController.text = profile.name;
       _emailController.text = profile.email;
       _usernameController.text = profile.username;
+      _passwordController.text = password ?? '';
       _phoneNumberController.text = profile.phoneNumber;
     } on Exception {
       if (mounted) _showStorageError();

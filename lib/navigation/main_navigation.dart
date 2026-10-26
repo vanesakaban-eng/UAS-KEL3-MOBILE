@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:uku_app/data/profile_settings_repository.dart';
 import 'package:uku_app/data/uku_store.dart';
 import 'package:uku_app/features/budget/budget_screen.dart';
 import 'package:uku_app/features/expense/expense_screen.dart';
@@ -6,20 +7,79 @@ import 'package:uku_app/features/expense/monthly_expense_screen.dart';
 import 'package:uku_app/features/expense/recap_screen.dart';
 import 'package:uku_app/features/expense/transactions_screen.dart';
 import 'package:uku_app/features/home/home_screen.dart';
+import 'package:uku_app/features/profile/edit_profil.dart';
 import 'package:uku_app/features/savings/saving_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
-  const MainNavigationScreen({super.key});
+  const MainNavigationScreen({
+    super.key,
+    this.profileRepository,
+    this.store,
+  });
+
+  final ProfileSettingsRepository? profileRepository;
+  final UkuStore? store;
+
   @override
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
 }
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
-  final UkuStore store = UkuStore();
+  late final UkuStore store;
   int currentIndex = 0;
   bool showRecap = false;
   bool showSavings = false;
   Saving? selectedSaving;
+
+  @override
+  void initState() {
+    super.initState();
+    store = widget.store ?? UkuStore();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && store.isOverBudget) {
+        _showOverBudgetWarning();
+      }
+    });
+  }
+
+  void _showOverBudgetWarning() {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        icon: const Icon(Icons.warning_amber_rounded,
+            color: Color(0xFFFAAE36), size: 36),
+        title: const Text('Kondisi keuangan buruk'),
+        content: Text(
+          'Pengeluaran bulan ini telah melebihi budget sebesar '
+          '${rupiah(store.remainingBudget.abs())}. '
+          'Tinjau kembali pengeluaran dan budget bulanan Anda.',
+          textAlign: TextAlign.center,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFFFAAE36),
+            ),
+            child: const Text('Mengerti'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              setState(() => currentIndex = 2);
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFFFAAE36),
+            ),
+            child: const Text('Lihat budget'),
+          ),
+        ],
+      ),
+    );
+  }
 
   void openExpense() {
     Navigator.push<void>(
@@ -48,6 +108,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       (label: 'Pengeluaran'),
       (label: 'Budget'),
       (label: 'Transaksi'),
+      (label: 'Profil'),
     ];
     final pages = [
       if (showSavings)
@@ -83,6 +144,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       TransactionsScreen(
         store: store,
         onBack: () => setState(() => currentIndex = 0),
+      ),
+      EditProfileScreen(
+        repository: widget.profileRepository,
+        onBack: () => setState(() => currentIndex = 0),
+        onSaved: () => setState(() => currentIndex = 0),
       ),
     ];
     return Scaffold(
@@ -157,13 +223,23 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                                       ? const Color(0xFFFAAE36)
                                       : const Color(0xFFD0D0D0),
                                 )
-                              else
+                              else if (index == 3)
                                 ImageIcon(
                                   AssetImage(
                                     currentIndex == index
                                         ? 'assets/icons/Payment History.png'
                                         : 'assets/icons/Payment History (1).png',
                                   ),
+                                  size: 25,
+                                  color: currentIndex == index
+                                      ? const Color(0xFFFAAE36)
+                                      : const Color(0xFFD0D0D0),
+                                )
+                              else
+                                Icon(
+                                  currentIndex == index
+                                      ? Icons.person
+                                      : Icons.person_outline,
                                   size: 25,
                                   color: currentIndex == index
                                       ? const Color(0xFFFAAE36)

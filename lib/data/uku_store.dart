@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uku_app/data/category_icons.dart';
 
 class Expense {
@@ -31,6 +34,7 @@ class FinancialActivity {
     this.location = '',
     this.method = '',
     this.iconPath,
+    this.category,
   });
 
   final ActivityType type;
@@ -41,6 +45,7 @@ class FinancialActivity {
   final String location;
   final String method;
   final String? iconPath;
+  final String? category;
 
   String get typeLabel => switch (type) {
         ActivityType.expense => 'Pengeluaran',
@@ -68,6 +73,15 @@ class Saving {
 }
 
 class UkuStore extends ChangeNotifier {
+  UkuStore() : _persistChanges = false;
+
+  UkuStore._persisted() : _persistChanges = true;
+
+  static const _budgetKey = 'financial.budget';
+  static const _budgetMonthKey = 'financial.budget_month';
+  static const _expensesKey = 'financial.expenses';
+
+  final bool _persistChanges;
   double budget = 1500000;
   DateTime budgetMonth = DateTime.now();
   final double income = 1000000;
@@ -87,6 +101,7 @@ class UkuStore extends ChangeNotifier {
       date: DateTime(2026, 9, 12),
       description: 'Setoran tabungan · Liburan',
       iconPath: categoryIconPathOrNull('Liburan'),
+      category: 'Liburan',
     ),
   ];
 
@@ -109,8 +124,72 @@ class UkuStore extends ChangeNotifier {
         category: 'Liburan'),
   ];
 
+  static Future<UkuStore> loadPersisted() async {
+    final preferences = await SharedPreferences.getInstance();
+    final store = UkuStore._persisted();
+    final savedBudget = preferences.getDouble(_budgetKey);
+    final savedBudgetMonth = preferences.getString(_budgetMonthKey);
+    final savedExpenses = preferences.getString(_expensesKey);
+
+    if (savedBudget != null) store.budget = savedBudget;
+    if (savedBudgetMonth != null) {
+      store.budgetMonth = DateTime.parse(savedBudgetMonth);
+    }
+    if (savedExpenses != null) {
+      final decoded = jsonDecode(savedExpenses);
+      if (decoded is! List) {
+        throw const FormatException('Data pengeluaran tersimpan tidak valid');
+      }
+      store.expenses
+        ..clear()
+        ..addAll(decoded.map((item) {
+          if (item is! Map<String, dynamic>) {
+            throw const FormatException(
+                'Data pengeluaran tersimpan tidak valid');
+          }
+          return Expense(
+            category: item['category'] as String,
+            amount: (item['amount'] as num).toDouble(),
+            date: DateTime.parse(item['date'] as String),
+            location: item['location'] as String,
+            purpose: item['purpose'] as String,
+            method: item['method'] as String,
+          );
+        }));
+    }
+    return store;
+  }
+
+  Future<void> persistFinancialData() async {
+    if (!_persistChanges) return;
+    final preferences = await SharedPreferences.getInstance();
+    final savedBudget = await preferences.setDouble(_budgetKey, budget);
+    final savedBudgetMonth = await preferences.setString(
+      _budgetMonthKey,
+      budgetMonth.toIso8601String(),
+    );
+    final savedExpenses = await preferences.setString(
+      _expensesKey,
+      jsonEncode(expenses
+          .map((expense) => {
+                'category': expense.category,
+                'amount': expense.amount,
+                'date': expense.date.toIso8601String(),
+                'location': expense.location,
+                'purpose': expense.purpose,
+                'method': expense.method,
+              })
+          .toList()),
+    );
+    if (!savedBudget || !savedBudgetMonth || !savedExpenses) {
+      throw Exception('Gagal menyimpan data keuangan');
+    }
+  }
+
   double get totalExpense => expenses.fold(0, (sum, item) => sum + item.amount);
   Saving? get latestSaving => savings.isEmpty ? null : savings.last;
+  bool get isOverBudget =>
+      hasBudgetForMonth(DateTime.now()) && remainingBudget < 0;
 
   double get remainingBudget =>
       (hasBudgetForMonth(DateTime.now()) ? budget : 0) -
@@ -130,6 +209,7 @@ class UkuStore extends ChangeNotifier {
               location: expense.location,
               method: expense.method,
               iconPath: categoryIconPathOrNull(expense.category),
+              category: expense.category,
             )),
         ..._otherActivities,
       ]..sort((a, b) => b.date.compareTo(a.date));
@@ -176,6 +256,7 @@ class UkuStore extends ChangeNotifier {
         description: 'Setoran tabungan · ${saving.category}',
         iconPath: categoryIconPathOrNull(saving.category) ??
             'assets/icons/LoveforMoney.png',
+        category: saving.category,
       ),
     );
     notifyListeners();

@@ -25,7 +25,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
     setState(() => _isEditing = true);
   }
 
-  void _saveBudget() {
+  Future<void> _saveBudget() async {
     final amount = double.tryParse(
       _budgetController.text.replaceAll('.', '').replaceAll(',', '').trim(),
     );
@@ -37,10 +37,18 @@ class _BudgetScreenState extends State<BudgetScreen> {
     }
 
     widget.store.setBudget(amount);
+    var saveMessage = 'Budget berhasil disimpan';
+    try {
+      await widget.store.persistFinancialData();
+    } on Exception {
+      saveMessage =
+          'Budget diubah, tetapi gagal disimpan untuk sesi berikutnya.';
+    }
+    if (!mounted) return;
     FocusScope.of(context).unfocus();
     setState(() => _isEditing = false);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Budget berhasil disimpan')),
+      SnackBar(content: Text(saveMessage)),
     );
   }
 
@@ -217,7 +225,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                     ),
                     Positioned(
                       left: 22,
-                      top: 102,
+                      top: 92,
                       child: InkWell(
                         onTap: _openBudgetEditor,
                         borderRadius: BorderRadius.circular(13),
@@ -234,6 +242,16 @@ class _BudgetScreenState extends State<BudgetScreen> {
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
+                            if (hasCurrentMonthBudget) ...[
+                              const SizedBox(height: 2),
+                              const Text(
+                                'Klik untuk edit budget bulanan',
+                                style: TextStyle(
+                                  color: Color(0x99000000),
+                                  fontSize: 9,
+                                ),
+                              ),
+                            ],
                             const SizedBox(height: 3),
                             Container(
                               width: 142,

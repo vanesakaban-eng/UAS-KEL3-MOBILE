@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uku_app/data/profile_settings_repository.dart';
 import 'package:uku_app/features/profile/edit_profil.dart';
+import 'package:uku_app/navigation/main_navigation.dart';
 
 class _FakeProfileSettingsRepository implements ProfileSettingsRepository {
   ProfileSettings profile = const ProfileSettings();
@@ -59,5 +60,31 @@ void main() {
       tester.widget<EditableText>(find.byType(EditableText).at(3)).obscureText,
       isFalse,
     );
+  });
+
+  testWidgets('profile is the rightmost main navigation destination',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MainNavigationScreen(
+          profileRepository: _FakeProfileSettingsRepository(),
+        ),
+      ),
+    );
+
+    final profileDestination = find.text('Profil');
+    expect(profileDestination, findsOneWidget);
+    await tester.tap(profileDestination);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Edit Profil'), findsOneWidget);
+    expect(find.text('Beranda'), findsOneWidget);
+    expect(find.text('Pengeluaran'), findsOneWidget);
+    expect(find.text('Budget'), findsOneWidget);
+    expect(find.text('Transaksi'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Kembali'));
+    await tester.pumpAndSettle();
+    expect(find.text('Halo, User'), findsOneWidget);
   });
 }

@@ -83,7 +83,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
     if (picked != null) setState(() => selectedDate = picked);
   }
 
-  void _save() {
+  Future<void> _save() async {
     final selectedCategory = category;
     final selectedMethod = method;
     if (selectedCategory == null || !_formKey.currentState!.validate()) return;
@@ -104,8 +104,17 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
       purpose: _purpose.text.trim(),
       method: selectedMethod,
     ));
+    var saveMessage = 'Pengeluaran berhasil dicatat';
+    try {
+      await widget.store.persistFinancialData();
+    } on Exception {
+      saveMessage =
+          'Pengeluaran dicatat, tetapi gagal disimpan untuk sesi berikutnya.';
+    }
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pengeluaran berhasil dicatat')));
+      SnackBar(content: Text(saveMessage)),
+    );
     _amount.clear();
     _location.clear();
     _purpose.clear();

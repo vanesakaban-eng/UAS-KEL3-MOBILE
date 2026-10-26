@@ -30,35 +30,37 @@ class _SavingDetailScreenState extends State<SavingDetailScreen> {
     Navigator.of(context).maybePop();
   }
 
-  Widget _detailField(String value) {
+  Widget _detailRow(String label, String value, {bool showDivider = true}) {
     return Container(
-      width: double.infinity,
-      constraints: const BoxConstraints(minHeight: 48),
-      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
-      alignment: Alignment.centerLeft,
+      constraints: const BoxConstraints(minHeight: 31),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.black38),
+        border: showDivider
+            ? const Border(bottom: BorderSide(color: Color(0xFFE3E3E3)))
+            : null,
       ),
-      child: Text(
-        value,
-        style: const TextStyle(color: Colors.black45, fontSize: 10),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(color: Colors.black54, fontSize: 10),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: const TextStyle(
+                color: Colors.black,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
       ),
-    );
-  }
-
-  Widget _detailItem(String label, String value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 8),
-        _detailField(value),
-      ],
     );
   }
 
@@ -99,58 +101,88 @@ class _SavingDetailScreenState extends State<SavingDetailScreen> {
               ),
             ),
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
-                children: [
-                  Container(
-                    padding: const EdgeInsets.fromLTRB(22, 18, 22, 20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(18),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x1F000000),
-                          blurRadius: 8,
-                          offset: Offset(0, 3),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(14, 24, 14, 14),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x33000000),
+                        blurRadius: 10,
+                        offset: Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        saving.name,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
                         ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _detailItem('Nama tabungan', saving.name),
-                        const SizedBox(height: 14),
-                        _detailItem('Target tabungan', rupiah(saving.target)),
-                        const SizedBox(height: 14),
-                        _detailItem(
-                          'Catatan',
-                          saving.note.isEmpty ? '-' : saving.note,
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        saving.note.trim().isEmpty
+                            ? 'Catatan'
+                            : saving.note.trim(),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.black54,
+                          fontSize: 9,
                         ),
-                        const SizedBox(height: 14),
-                        _detailItem('Jenis tabungan', saving.category),
-                        const SizedBox(height: 26),
-                        SizedBox(
-                          height: 44,
-                          child: ElevatedButton(
-                            onPressed: _goBack,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: _orange,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              elevation: 3,
+                      ),
+                      const SizedBox(height: 20),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF7F7F7),
+                          border: Border.all(color: const Color(0xFFE0E0E0)),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Column(
+                          children: [
+                            _detailRow('Nama Tabungan', saving.name),
+                            _detailRow(
+                              'Target Tabungan',
+                              rupiah(saving.target).replaceFirst('Rp ', ''),
                             ),
-                            child: const Text(
-                              'Kembali',
-                              style: TextStyle(fontSize: 18),
+                            _detailRow(
+                              'Jenis Tabungan',
+                              saving.category,
+                              showDivider: false,
                             ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      SizedBox(
+                        height: 36,
+                        child: ElevatedButton(
+                          onPressed: _goBack,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _orange,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: const Text(
+                            'Ke Beranda',
+                            style: TextStyle(fontSize: 12),
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ],

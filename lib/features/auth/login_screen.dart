@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:uku_app/data/uku_store.dart';
 import 'package:uku_app/features/auth/register_screen.dart';
 import 'package:uku_app/navigation/main_navigation.dart';
 
@@ -48,13 +49,26 @@ class LoginScreen extends StatelessWidget {
               const SizedBox(height: 10),
                             _buildButton(
                 text: 'Login',
-                onPressed: () {
-                  // Berpindah ke Halaman Home Utama
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const MainNavigationScreen()),
-                  );
+                onPressed: () async {
+                  try {
+                    final store = await UkuStore.loadPersisted();
+                    if (!context.mounted) return;
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => MainNavigationScreen(store: store),
+                      ),
+                    );
+                  } on Exception {
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Gagal memuat data keuangan. Coba masuk kembali.',
+                        ),
+                      ),
+                    );
+                  }
                 },
               ),
               IntrinsicHeight(

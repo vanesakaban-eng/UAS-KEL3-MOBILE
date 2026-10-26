@@ -57,7 +57,7 @@ class _SavingCreationScreenState extends State<SavingCreationScreen> {
                     child: Padding(
                       padding: const EdgeInsets.only(top: 58),
                       child: const Text(
-                        'Buat Tabungan',
+                        'Pilih jenis tabungan',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 20,
@@ -73,14 +73,6 @@ class _SavingCreationScreenState extends State<SavingCreationScreen> {
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-                  const Text(
-                    'Pilih jenis tabungan',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
                   const SizedBox(height: 8),
                   _buildCategoryGrid(),
                 ],

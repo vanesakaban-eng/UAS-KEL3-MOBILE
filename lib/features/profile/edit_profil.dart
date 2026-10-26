@@ -4,9 +4,16 @@ import 'package:uku_app/features/auth/login_screen.dart';
 import 'package:uku_app/widgets/app_back_button.dart';
 
 class EditProfileScreen extends StatefulWidget {
-  const EditProfileScreen({super.key, this.repository});
+  const EditProfileScreen({
+    super.key,
+    this.repository,
+    this.onBack,
+    this.onSaved,
+  });
 
   final ProfileSettingsRepository? repository;
+  final VoidCallback? onBack;
+  final VoidCallback? onSaved;
 
   @override
   State<EditProfileScreen> createState() => _EditProfileScreenState();
@@ -67,7 +74,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ? null
             : _passwordController.text,
       );
-      if (mounted) Navigator.pop(context);
+      if (!mounted) return;
+      if (widget.onSaved != null) {
+        widget.onSaved!();
+      } else {
+        Navigator.pop(context);
+      }
     } on Exception {
       if (mounted) _showStorageError();
     }
@@ -197,7 +209,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           child: Transform.translate(
                             offset: const Offset(-20, 0),
                             child: AppBackButton(
-                              onPressed: () => Navigator.pop(context),
+                              onPressed: widget.onBack ??
+                                  () => Navigator.pop(context),
                             ),
                           ),
                         ),

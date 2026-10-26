@@ -3,7 +3,6 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:uku_app/data/uku_store.dart';
 import 'package:uku_app/features/expense/recap_screen.dart';
 import 'package:uku_app/features/expense/transactions_screen.dart';
-import 'package:uku_app/features/profile/edit_profil.dart';
 import 'package:uku_app/features/savings/saving_detail_screen.dart';
 import 'package:uku_app/features/savings/saving_screen.dart';
 
@@ -48,27 +47,13 @@ class HomeScreenContent extends StatelessWidget {
                     child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text('Halo, User',
-                                    style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold)),
-                                GestureDetector(
-                                    onTap: () => Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (_) =>
-                                                const EditProfileScreen())),
-                                    child: CircleAvatar(
-                                        radius: 18,
-                                        backgroundColor: Colors.white,
-                                        child: Image.asset(
-                                            'assets/image/profil.png',
-                                            height: 28)))
-                              ]),
+                          Row(children: [
+                            const Text('Halo, User',
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold))
+                          ]),
                           const SizedBox(height: 12),
                           const Text('Sisa Budget',
                               style: TextStyle(
@@ -108,21 +93,22 @@ class HomeScreenContent extends StatelessWidget {
                           const SizedBox(height: 16),
                           OutlinedButton(
                               style: OutlinedButton.styleFrom(
-                                  minimumSize: const Size(double.infinity, 50),
+                                  minimumSize: const Size(double.infinity, 62),
                                   shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10)),
-                                  side:
-                                      const BorderSide(color: Colors.black12)),
+                                      borderRadius: BorderRadius.circular(12)),
+                                  side: const BorderSide(
+                                      color: Color(0xFFFAAE36), width: 1.5)),
                               onPressed: onExpense,
                               child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Image.asset('assets/icons/Plus.png',
-                                        height: 22),
-                                    const SizedBox(width: 8),
+                                        height: 26),
+                                    const SizedBox(width: 10),
                                     const Text('Catat Pengeluaran',
                                         style: TextStyle(
                                             color: Colors.black,
+                                            fontSize: 14,
                                             fontWeight: FontWeight.bold))
                                   ])),
                           const SizedBox(height: 14),
@@ -154,6 +140,108 @@ class HomeScreenContent extends StatelessWidget {
                                               ),
                                             )))
                           ]),
+                          const SizedBox(height: 14),
+                          _buildSectionCard(
+                              title: 'AI Notifikasi',
+                              icon: Icons.auto_awesome,
+                              child: Column(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(color: Colors.black12),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          'Grafik Keuangan',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          _monthLabel(DateTime.now()),
+                                          style: const TextStyle(
+                                            fontSize: 9,
+                                            color: Colors.black54,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        _buildFinancialChart(store),
+                                        const SizedBox(height: 8),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 9,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            border: Border.all(
+                                                color: Colors.black26),
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              const Expanded(
+                                                child: Text(
+                                                  'Kondisi keuangan saat ini',
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: TextStyle(
+                                                    fontSize: 10,
+                                                    color: Colors.black87,
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Container(
+                                                width: 16,
+                                                height: 16,
+                                                decoration: BoxDecoration(
+                                                  color: store.isOverBudget
+                                                      ? Colors.red
+                                                      : Colors.green,
+                                                  shape: BoxShape.circle,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    height: 48,
+                                    child: ElevatedButton(
+                                      onPressed: onExpenseDetails,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.white,
+                                        foregroundColor: Colors.black87,
+                                        elevation: 2,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                      ),
+                                      child: const Text(
+                                        'Klik Untuk Detail Transaksi',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              )),
                           const SizedBox(height: 16),
                           _buildSectionCard(
                               title: 'Transaksi',
@@ -257,109 +345,6 @@ class HomeScreenContent extends StatelessWidget {
                                             style: const TextStyle(
                                                 fontWeight: FontWeight.bold))
                                       ]))),
-                          const SizedBox(height: 14),
-                          _buildSectionCard(
-                              title: 'AI Notifikasi',
-                              icon: Icons.auto_awesome,
-                              child: Column(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(10),
-                                    decoration: BoxDecoration(
-                                      border: Border.all(color: Colors.black12),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        const Text(
-                                          'Grafik Keuangan',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          _monthLabel(DateTime.now()),
-                                          style: const TextStyle(
-                                            fontSize: 9,
-                                            color: Colors.black54,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        _buildFinancialChart(store),
-                                        const SizedBox(height: 8),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 12,
-                                            vertical: 9,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            border: Border.all(
-                                                color: Colors.black26),
-                                            borderRadius:
-                                                BorderRadius.circular(10),
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              const Expanded(
-                                                child: Text(
-                                                  'Kondisi keuangan saat ini',
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  style: TextStyle(
-                                                    fontSize: 10,
-                                                    color: Colors.black87,
-                                                  ),
-                                                ),
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Container(
-                                                width: 16,
-                                                height: 16,
-                                                decoration: BoxDecoration(
-                                                  color:
-                                                      store.remainingBudget >= 0
-                                                          ? Colors.green
-                                                          : Colors.red,
-                                                  shape: BoxShape.circle,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  SizedBox(
-                                    width: double.infinity,
-                                    height: 48,
-                                    child: ElevatedButton(
-                                      onPressed: onExpenseDetails,
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.white,
-                                        foregroundColor: Colors.black87,
-                                        elevation: 2,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                        ),
-                                      ),
-                                      child: const Text(
-                                        'Klik Untuk Detail Transaksi',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              )),
                         ])),
               ])));
         });
@@ -387,16 +372,16 @@ class HomeScreenContent extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(10),
           child: Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                   border: Border.all(color: Colors.black12),
                   borderRadius: BorderRadius.circular(10)),
               child: Column(children: [
-                Image.asset(iconPath, height: 36),
-                const SizedBox(height: 6),
+                Image.asset(iconPath, height: 28),
+                const SizedBox(height: 4),
                 Text(label,
                     style: const TextStyle(
-                        fontSize: 12, fontWeight: FontWeight.w500))
+                        fontSize: 11, fontWeight: FontWeight.w500))
               ])));
   Widget _buildSectionCard(
           {required String title,

@@ -248,7 +248,13 @@ void main() {
     expect(find.text('Riwayat Transaksi'), findsOneWidget);
     expect(find.text('Sabtu, 12 September 2026'), findsOneWidget);
     expect(find.text('Detail Transaksi'), findsNothing);
-    expect(find.text('Pakaian'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(ListView),
+        matching: find.text('Pakaian'),
+      ),
+      findsOneWidget,
+    );
     expect(find.text('Metode: Cash'), findsOneWidget);
     expect(find.text('- Rp 200.000'), findsOneWidget);
     await tester.tap(find.byTooltip('Kembali'));
@@ -363,6 +369,28 @@ void main() {
     expect(find.text('Grafik Pengeluaran'), findsNothing);
   });
 
+  testWidgets('recap month picker selects only a month and year',
+      (tester) async {
+    final store = UkuStore();
+    await tester.pumpWidget(
+      MaterialApp(home: Scaffold(body: RecapScreen(store: store))),
+    );
+
+    await tester.tap(find.text('September, 2026').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Pilih Bulan & Tahun'), findsNWidgets(2));
+    expect(find.text('2026'), findsOneWidget);
+    expect(find.byType(CalendarDatePicker), findsNothing);
+    expect(find.text('Oktober'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Oktober'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Oktober, 2026'), findsWidgets);
+    expect(find.text('Jalan - jalan ke Bali'), findsNothing);
+  });
+
   testWidgets('AI notification details opens the expense feature',
       (tester) async {
     await tester.pumpWidget(
@@ -378,6 +406,54 @@ void main() {
 
     expect(find.text('Grafik Pengeluaran'), findsOneWidget);
     expect(find.text('Pengeluaran'), findsWidgets);
+  });
+
+  testWidgets('shows a warning on app open when monthly budget is exceeded',
+      (tester) async {
+    final now = DateTime.now();
+    final store = UkuStore()..setBudget(100000);
+    store.addExpense(Expense(
+      category: 'Belanja',
+      amount: 150000,
+      date: now,
+      location: '',
+      purpose: '',
+      method: 'Tunai',
+    ));
+
+    await tester.pumpWidget(
+      MaterialApp(home: MainNavigationScreen(store: store)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Kondisi keuangan buruk'), findsOneWidget);
+    expect(find.textContaining('Rp 50.000'), findsOneWidget);
+
+    await tester.tap(find.text('Lihat budget'));
+    await tester.pumpAndSettle();
+    expect(find.text('Budget'), findsWidgets);
+    expect(find.text('Kondisi keuangan buruk'), findsNothing);
+  });
+
+  testWidgets('does not show an over-budget warning within monthly budget',
+      (tester) async {
+    final now = DateTime.now();
+    final store = UkuStore()..setBudget(200000);
+    store.addExpense(Expense(
+      category: 'Belanja',
+      amount: 150000,
+      date: now,
+      location: '',
+      purpose: '',
+      method: 'Tunai',
+    ));
+
+    await tester.pumpWidget(
+      MaterialApp(home: MainNavigationScreen(store: store)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Kondisi keuangan buruk'), findsNothing);
   });
 
   testWidgets('AI finance chart plots actual expenses for the current month',
@@ -421,7 +497,9 @@ void main() {
       const MaterialApp(home: MainNavigationScreen()),
     );
 
-    await tester.tap(find.text('Pakaian'));
+    final pakaianExpense = find.text('Pakaian');
+    await tester.ensureVisible(pakaianExpense);
+    await tester.tap(pakaianExpense);
     await tester.pumpAndSettle();
 
     expect(find.text('Riwayat Transaksi'), findsOneWidget);
@@ -452,7 +530,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Detail Tabungan'), findsOneWidget);
-    expect(find.text('Jenis tabungan'), findsOneWidget);
+    expect(find.text('Jenis Tabungan'), findsOneWidget);
     expect(find.text('Beranda'), findsOneWidget);
     expect(find.text('Pengeluaran'), findsOneWidget);
     expect(find.text('Budget'), findsOneWidget);
@@ -485,8 +563,20 @@ void main() {
     await tester.tap(find.text('Transaksi').last);
     await tester.pumpAndSettle();
     expect(find.text('Metode: Cash'), findsWidgets);
-    expect(find.text('Pakaian'), findsOneWidget);
-    expect(find.text('Belanja'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(ListView),
+        matching: find.text('Pakaian'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byType(ListView),
+        matching: find.text('Belanja'),
+      ),
+      findsOneWidget,
+    );
     expect(find.text('- Rp 200.000'), findsOneWidget);
     expect(find.text('- Rp 25.000'), findsOneWidget);
     expect(find.text('Detail Transaksi'), findsNothing);

@@ -25,6 +25,10 @@ void main() {
     expect(find.text('Nama Tabungan'), findsOneWidget);
     await tester.enterText(find.byType(TextFormField).at(0), 'Dana Liburan');
     await tester.enterText(find.byType(TextFormField).at(1), '2500000');
+    await tester.enterText(
+      find.byType(TextFormField).at(2),
+      'Dana untuk perjalanan',
+    );
     await tester.tap(find.widgetWithText(ElevatedButton, 'Buat Tabungan'));
     await tester.pumpAndSettle();
 
@@ -32,6 +36,7 @@ void main() {
     expect(store.savings.last.name, 'Dana Liburan');
     expect(store.savings.last.category, 'Liburan');
     expect(store.savings.last.target, 2500000);
+    expect(store.savings.last.note, 'Dana untuk perjalanan');
   });
 
   testWidgets('refreshes the saving balance after adding a deposit',
@@ -61,7 +66,7 @@ void main() {
     );
   });
 
-  testWidgets('saving detail shows saved values in the read-only form',
+  testWidgets('saving detail shows the entered note and compact summary',
       (tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
@@ -82,19 +87,18 @@ void main() {
     );
 
     expect(find.text('Detail Tabungan'), findsOneWidget);
-    expect(find.text('Nama tabungan'), findsOneWidget);
-    expect(find.text(saving.name), findsOneWidget);
-    expect(find.text('Target tabungan'), findsOneWidget);
-    expect(find.text('Rp 3.000.000'), findsOneWidget);
-    expect(find.text('Catatan'), findsOneWidget);
+    expect(find.text('Nama Tabungan'), findsOneWidget);
+    expect(find.text(saving.name), findsNWidgets(2));
+    expect(find.text('Target Tabungan'), findsOneWidget);
+    expect(find.text('3.000.000'), findsOneWidget);
+    expect(find.text('Catatan'), findsNothing);
     expect(find.text(saving.note), findsNWidgets(2));
-    expect(find.text('Jenis tabungan'), findsOneWidget);
-    expect(find.text('Liburan'), findsNWidgets(2));
-    expect(find.widgetWithText(ElevatedButton, 'Kembali'), findsOneWidget);
+    expect(find.text('Jenis Tabungan'), findsOneWidget);
+    expect(find.widgetWithText(ElevatedButton, 'Ke Beranda'), findsOneWidget);
     expect(find.byType(TextField), findsNothing);
     expect(find.byType(LinearProgressIndicator), findsNothing);
     expect(find.text('Tambah saldo'), findsNothing);
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Kembali'));
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Ke Beranda'));
     expect(didGoBack, isTrue);
   });
 
@@ -151,9 +155,9 @@ void main() {
 
     expect(find.byType(SavingDetailScreen), findsOneWidget);
     expect(find.text('Detail Tabungan'), findsOneWidget);
-    expect(find.text(saving.name), findsOneWidget);
-    expect(find.text('Rp 3.000.000'), findsOneWidget);
-    expect(find.text('Jenis tabungan'), findsOneWidget);
+    expect(find.text(saving.name), findsNWidgets(2));
+    expect(find.text('3.000.000'), findsOneWidget);
+    expect(find.text('Jenis Tabungan'), findsOneWidget);
   });
 
   testWidgets('Home features the newest saving while Nabung keeps old savings',
@@ -246,6 +250,7 @@ void main() {
       MaterialApp(home: Scaffold(body: BudgetScreen(store: store))),
     );
     expect(find.text('Buat Budget'), findsOneWidget);
+    expect(find.text('Klik untuk edit budget bulanan'), findsOneWidget);
     expect(tester.widget<TextField>(find.byType(TextField)).enabled, isFalse);
     expect(
       tester
@@ -282,6 +287,7 @@ void main() {
       MaterialApp(home: Scaffold(body: BudgetScreen(store: store))),
     );
     expect(find.text('Buat Budget bulan ini'), findsOneWidget);
+    expect(find.text('Klik untuk edit budget bulanan'), findsNothing);
     expect(find.text('Buat Budget'), findsOneWidget);
     expect(tester.widget<TextField>(find.byType(TextField)).enabled, isTrue);
     await tester.tap(find.text('Buat Budget bulan ini'));

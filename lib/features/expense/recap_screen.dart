@@ -47,20 +47,88 @@ class _RecapScreenState extends State<RecapScreen> {
   }
 
   Future<void> _pickMonth() async {
-    final picked = await showDatePicker(
+    final picked = await showDialog<DateTime>(
       context: context,
-      initialDate: _month,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2035),
-      builder: (context, child) => Theme(
-        data: Theme.of(context).copyWith(
-          colorScheme: const ColorScheme.light(primary: Color(0xFFFAAE36)),
-        ),
-        child: child!,
-      ),
+      builder: (context) {
+        var selectedYear = _month.year;
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Pilih Bulan & Tahun'),
+              content: SizedBox(
+                width: 320,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(
+                          tooltip: 'Tahun sebelumnya',
+                          onPressed: selectedYear > 2020
+                              ? () => setDialogState(() => selectedYear--)
+                              : null,
+                          icon: const Icon(Icons.chevron_left),
+                        ),
+                        Text(
+                          '$selectedYear',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: 'Tahun berikutnya',
+                          onPressed: selectedYear < 2035
+                              ? () => setDialogState(() => selectedYear++)
+                              : null,
+                          icon: const Icon(Icons.chevron_right),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    GridView.count(
+                      crossAxisCount: 3,
+                      shrinkWrap: true,
+                      mainAxisSpacing: 8,
+                      crossAxisSpacing: 8,
+                      childAspectRatio: 2.2,
+                      physics: const NeverScrollableScrollPhysics(),
+                      children: [
+                        for (var month = 0; month < _monthNames.length; month++)
+                          OutlinedButton(
+                            onPressed: () => Navigator.of(context).pop(
+                              DateTime(selectedYear, month + 1),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFF292929),
+                              side: const BorderSide(color: Color(0xFFE0E0E0)),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 4),
+                            ),
+                            child: Text(
+                              _monthNames[month],
+                              style: const TextStyle(fontSize: 11),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Batal'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
     if (picked != null) {
-      setState(() => _month = DateTime(picked.year, picked.month));
+      setState(() => _month = picked);
     }
   }
 

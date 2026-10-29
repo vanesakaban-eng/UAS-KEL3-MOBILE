@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:uku_app/features/auth/register_screen.dart'; // <--- Ubah ke RegisterScreen
+import 'package:uku_app/data/api_profile_settings_repository.dart';
+import 'package:uku_app/data/mobile_api.dart';
+import 'package:uku_app/data/uku_store.dart';
+import 'package:uku_app/features/auth/login_screen.dart';
+import 'package:uku_app/navigation/main_navigation.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -12,14 +16,33 @@ class _SplashScreenState extends State {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 10), () {
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const Register()), // <--- Arahkan ke RegisterScreen
+    _openNextScreen();
+  }
+
+  Future<void> _openNextScreen() async {
+    await Future<void>.delayed(const Duration(seconds: 10));
+    if (!mounted) return;
+
+    Widget nextScreen = const LoginScreen();
+    if (await MobileApi.shared.hasToken) {
+      try {
+        final user = await MobileApi.shared.profile();
+        final store = await UkuStore.loadFromApi(MobileApi.shared);
+        nextScreen = MainNavigationScreen(
+          store: store,
+          profileRepository: ApiProfileSettingsRepository(MobileApi.shared),
+          userName: user['name']?.toString() ?? 'User',
         );
+      } on Exception {
+        await MobileApi.shared.logout();
+        nextScreen = const LoginScreen();
       }
-    });
+    }
+    if (!mounted) return;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => nextScreen),
+    );
   }
 
   @override
@@ -33,7 +56,8 @@ class _SplashScreenState extends State {
             Image.asset(
               'assets/image/logo_depan.png',
               height: 200,
-              errorBuilder: (context, error, stackTrace) => Image.asset('assets/image/logo.png', height: 140),
+              errorBuilder: (context, error, stackTrace) =>
+                  Image.asset('assets/image/logo.png', height: 140),
             ),
           ],
         ),

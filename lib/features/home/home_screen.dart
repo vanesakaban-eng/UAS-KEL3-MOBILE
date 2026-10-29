@@ -11,6 +11,7 @@ class HomeScreenContent extends StatelessWidget {
     super.key,
     required this.store,
     required this.onExpense,
+    this.userName = 'User',
     this.onBudget,
     this.onRecap,
     this.onSaving,
@@ -19,6 +20,7 @@ class HomeScreenContent extends StatelessWidget {
     this.onExpenseDetails,
   });
   final UkuStore store;
+  final String userName;
   final VoidCallback onExpense;
   final VoidCallback? onBudget;
   final VoidCallback? onRecap;
@@ -48,8 +50,8 @@ class HomeScreenContent extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(children: [
-                            const Text('Halo, User',
-                                style: TextStyle(
+                            Text('Halo, $userName',
+                                style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 20,
                                     fontWeight: FontWeight.bold))

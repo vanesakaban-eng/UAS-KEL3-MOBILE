@@ -56,6 +56,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(store.savings.first.current, 1500000);
+      expect(store.income, 1500000);
     expect(find.text('Rp 1.500.000'), findsOneWidget);
     expect(
       store.activities.any((activity) =>

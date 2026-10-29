@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:uku_app/data/api_profile_settings_repository.dart';
+import 'package:uku_app/data/mobile_api.dart';
+import 'package:uku_app/data/uku_store.dart';
 import 'package:uku_app/features/auth/login_screen.dart';
+import 'package:uku_app/navigation/main_navigation.dart';
 
 class Register extends StatefulWidget {
   const Register({super.key});
@@ -12,6 +16,55 @@ class RegisterState extends State<Register> {
   String textField2 = '';
   String textField3 = '';
   String textField4 = '';
+  bool _isLoading = false;
+
+  Future<void> _register() async {
+    if (_isLoading) return;
+    if (textField1.trim().isEmpty || !textField2.contains('@')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Isi username dan email yang valid.')),
+      );
+      return;
+    }
+    if (textField3.length < 8 || textField3 != textField4) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Password minimal 8 karakter dan harus sama.'),
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      final user = await MobileApi.shared.register(
+        name: textField1.trim(),
+        email: textField2.trim(),
+        password: textField3,
+      );
+      final store = await UkuStore.loadFromApi(MobileApi.shared);
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil<void>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => MainNavigationScreen(
+            store: store,
+            profileRepository: ApiProfileSettingsRepository(MobileApi.shared),
+            userName: user['name']?.toString() ?? textField1.trim(),
+          ),
+        ),
+        (_) => false,
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.toString())),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -140,7 +193,6 @@ class RegisterState extends State<Register> {
                                               borderRadius:
                                                   BorderRadius.circular(6),
                                               color: Color(0xFFFFFFFF),
-                                              
                                             ),
                                             margin: const EdgeInsets.only(
                                                 bottom: 10),
@@ -197,7 +249,6 @@ class RegisterState extends State<Register> {
                                               borderRadius:
                                                   BorderRadius.circular(6),
                                               color: Color(0xFFFFFFFF),
-                                              
                                             ),
                                             margin: const EdgeInsets.only(
                                                 bottom: 10),
@@ -254,7 +305,6 @@ class RegisterState extends State<Register> {
                                               borderRadius:
                                                   BorderRadius.circular(6),
                                               color: Color(0xFFFFFFFF),
-                                              
                                             ),
                                             margin: const EdgeInsets.only(
                                                 bottom: 35, left: 1),
@@ -299,20 +349,13 @@ class RegisterState extends State<Register> {
                                                       color: Color(0x42000000),
                                                       width: 1.5),
                                                 ),
-                                                filled: false, 
+                                                filled: false,
                                               ),
                                             ),
                                           ),
                                         ),
                                         InkWell(
-                                          onTap: () {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                  builder: (_) =>
-                                                      const LoginScreen()),
-                                            );
-                                          },
+                                          onTap: _isLoading ? null : _register,
                                           child: IntrinsicHeight(
                                             child: Container(
                                               decoration: BoxDecoration(
@@ -333,7 +376,7 @@ class RegisterState extends State<Register> {
                                               width: double.infinity,
                                               child: Column(children: [
                                                 Text(
-                                                  "Login",
+                                                  "Daftar",
                                                   style: TextStyle(
                                                     color: Color(0xFFFFFFFF),
                                                     fontSize: 14,

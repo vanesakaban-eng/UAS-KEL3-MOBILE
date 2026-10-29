@@ -15,10 +15,12 @@ class MainNavigationScreen extends StatefulWidget {
     super.key,
     this.profileRepository,
     this.store,
+    this.userName = 'User',
   });
 
   final ProfileSettingsRepository? profileRepository;
   final UkuStore? store;
+  final String userName;
 
   @override
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
@@ -128,6 +130,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       else
         HomeScreenContent(
           store: store,
+          userName: widget.userName,
           onExpense: openExpense,
           onBudget: openBudget,
           onRecap: () => setState(() => showRecap = true),

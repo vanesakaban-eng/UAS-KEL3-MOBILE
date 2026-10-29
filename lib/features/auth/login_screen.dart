@@ -1,10 +1,71 @@
 import 'package:flutter/material.dart';
+import 'package:uku_app/data/api_profile_settings_repository.dart';
+import 'package:uku_app/data/mobile_api.dart';
 import 'package:uku_app/data/uku_store.dart';
+import 'package:uku_app/features/auth/forgot_password_screen.dart';
 import 'package:uku_app/features/auth/register_screen.dart';
 import 'package:uku_app/navigation/main_navigation.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _login() async {
+    if (_isLoading) return;
+    setState(() => _isLoading = true);
+    try {
+      final user = await MobileApi.shared.login(
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
+      final store = await UkuStore.loadFromApi(MobileApi.shared);
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => MainNavigationScreen(
+            store: store,
+            profileRepository: ApiProfileSettingsRepository(MobileApi.shared),
+            userName: user['name']?.toString() ?? 'User',
+          ),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.toString())),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _openForgotPassword() async {
+    final email = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ForgotPasswordScreen(
+          initialEmail: _emailController.text.trim(),
+        ),
+      ),
+    );
+    if (email != null && mounted) _emailController.text = email;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,177 +96,145 @@ class LoginScreen extends StatelessWidget {
                         fontWeight: FontWeight.w500)),
               ),
               const SizedBox(height: 8),
-              _buildTextField(hintText: 'Email'),
+              _buildTextField(hintText: 'Email', controller: _emailController),
               const SizedBox(height: 12),
-              _buildTextField(hintText: 'Password', isObscure: true),
+              _buildTextField(
+                hintText: 'Password',
+                controller: _passwordController,
+                isObscure: true,
+              ),
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
-                  onPressed: () {},
+                  onPressed: _openForgotPassword,
                   child: const Text('Lupa Password?',
                       style: TextStyle(color: Colors.black54, fontSize: 12)),
                 ),
               ),
               const SizedBox(height: 10),
-                            _buildButton(
+              _buildButton(
                 text: 'Login',
-                onPressed: () async {
-                  try {
-                    final store = await UkuStore.loadPersisted();
-                    if (!context.mounted) return;
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => MainNavigationScreen(store: store),
-                      ),
-                    );
-                  } on Exception {
-                    if (!context.mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Gagal memuat data keuangan. Coba masuk kembali.',
-                        ),
-                      ),
-                    );
-                  }
-                },
+                onPressed: _isLoading ? null : _login,
               ),
               IntrinsicHeight(
-                                child: Container(
-                                  margin: const EdgeInsets.only(
-                                      top: 13, bottom: 13, left: 47, right: 47),
-                                  width: double.infinity,
-                                  child: Column(children: [
-                                    IntrinsicWidth(
-                                      child: IntrinsicHeight(
-                                        child: Container(
-                                          margin:
-                                              const EdgeInsets.only(bottom: 13),
-                                          width: double.infinity,
-                                          child: Row(children: [
-                                            Container(
-                                              color: Color(0xFF9E9E9E),
-                                              margin: const EdgeInsets.only(
-                                                  right: 8),
-                                              width: 75,
-                                              height: 1,
-                                              child: SizedBox(),
-                                            ),
-                                            Container(
-                                              margin: const EdgeInsets.only(
-                                                  right: 10),
-                                              child: Text(
-                                                "Atau login  menggunakan",
-                                                style: TextStyle(
-                                                  color: Color(0xFF9E9E9E),
-                                                  fontSize: 12,
-                                                ),
-                                              ),
-                                            ),
-                                            Container(
-                                              color: Color(0xFF9E9E9E),
-                                              width: 74,
-                                              height: 1,
-                                              child: SizedBox(),
-                                            ),
-                                          ]),
-                                        ),
-                                      ),
-                                    ),
-                                    IntrinsicWidth(
-                                      child: IntrinsicHeight(
-                                        child: Row(children: [
-                                          InkWell(
-                                            onTap: () {
-                                              print('Pressed');
-                                            },
-                                            child: IntrinsicWidth(
-                                              child: IntrinsicHeight(
-                                                child: Container(
-                                                  decoration: BoxDecoration(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            15),
-                                                    color: Color(0xFFFAAE36),
-                                                    boxShadow: [
-                                                      BoxShadow(
-                                                        color:
-                                                            Color(0x36000000),
-                                                        blurRadius: 10,
-                                                        offset: Offset(0, 0),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  padding:
-                                                      const EdgeInsets.all(9),
-                                                  margin: const EdgeInsets.only(
-                                                      right: 32),
-                                                  child: Column(
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
-                                                      children: [
-                                                        Container(
-                                                            width: 36,
-                                                            height: 36,
-                                                            child:
-                                                                Image.network(
-                                                              "https://storage.googleapis.com/tagjs-prod.appspot.com/v1/EkWxkRXtj2/yto9kz03_expires_30_days.png",
-                                                              fit: BoxFit.fill,
-                                                            )),
-                                                      ]),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                          InkWell(
-                                            onTap: () {
-                                              print('Pressed');
-                                            },
-                                            child: IntrinsicWidth(
-                                              child: IntrinsicHeight(
-                                                child: Container(
-                                                  decoration: BoxDecoration(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            15),
-                                                    color: Color(0xFFFAAE36),
-                                                    boxShadow: [
-                                                      BoxShadow(
-                                                        color:
-                                                            Color(0x36000000),
-                                                        blurRadius: 10,
-                                                        offset: Offset(0, 0),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  padding:
-                                                      const EdgeInsets.all(4),
-                                                  child: Column(
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
-                                                      children: [
-                                                        Container(
-                                                            width: 46,
-                                                            height: 46,
-                                                            child:
-                                                                Image.network(
-                                                              "https://storage.googleapis.com/tagjs-prod.appspot.com/v1/EkWxkRXtj2/5q3bpj2q_expires_30_days.png",
-                                                              fit: BoxFit.fill,
-                                                            )),
-                                                      ]),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ]),
-                                      ),
-                                    ),
-                                  ]),
+                child: Container(
+                  margin: const EdgeInsets.only(
+                      top: 13, bottom: 13, left: 47, right: 47),
+                  width: double.infinity,
+                  child: Column(children: [
+                    IntrinsicWidth(
+                      child: IntrinsicHeight(
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 13),
+                          width: double.infinity,
+                          child: Row(children: [
+                            Container(
+                              color: Color(0xFF9E9E9E),
+                              margin: const EdgeInsets.only(right: 8),
+                              width: 75,
+                              height: 1,
+                              child: SizedBox(),
+                            ),
+                            Container(
+                              margin: const EdgeInsets.only(right: 10),
+                              child: Text(
+                                "Atau login  menggunakan",
+                                style: TextStyle(
+                                  color: Color(0xFF9E9E9E),
+                                  fontSize: 12,
                                 ),
                               ),
+                            ),
+                            Container(
+                              color: Color(0xFF9E9E9E),
+                              width: 74,
+                              height: 1,
+                              child: SizedBox(),
+                            ),
+                          ]),
+                        ),
+                      ),
+                    ),
+                    IntrinsicWidth(
+                      child: IntrinsicHeight(
+                        child: Row(children: [
+                          InkWell(
+                            onTap: () {
+                              print('Pressed');
+                            },
+                            child: IntrinsicWidth(
+                              child: IntrinsicHeight(
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(15),
+                                    color: Color(0xFFFAAE36),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Color(0x36000000),
+                                        blurRadius: 10,
+                                        offset: Offset(0, 0),
+                                      ),
+                                    ],
+                                  ),
+                                  padding: const EdgeInsets.all(9),
+                                  margin: const EdgeInsets.only(right: 32),
+                                  child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Container(
+                                            width: 36,
+                                            height: 36,
+                                            child: Image.network(
+                                              "https://storage.googleapis.com/tagjs-prod.appspot.com/v1/EkWxkRXtj2/yto9kz03_expires_30_days.png",
+                                              fit: BoxFit.fill,
+                                            )),
+                                      ]),
+                                ),
+                              ),
+                            ),
+                          ),
+                          InkWell(
+                            onTap: () {
+                              print('Pressed');
+                            },
+                            child: IntrinsicWidth(
+                              child: IntrinsicHeight(
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(15),
+                                    color: Color(0xFFFAAE36),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Color(0x36000000),
+                                        blurRadius: 10,
+                                        offset: Offset(0, 0),
+                                      ),
+                                    ],
+                                  ),
+                                  padding: const EdgeInsets.all(4),
+                                  child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Container(
+                                            width: 46,
+                                            height: 46,
+                                            child: Image.network(
+                                              "https://storage.googleapis.com/tagjs-prod.appspot.com/v1/EkWxkRXtj2/5q3bpj2q_expires_30_days.png",
+                                              fit: BoxFit.fill,
+                                            )),
+                                      ]),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ]),
+                      ),
+                    ),
+                  ]),
+                ),
+              ),
               const SizedBox(height: 18),
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
@@ -239,9 +268,15 @@ class LoginScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTextField({required String hintText, bool isObscure = false}) {
+  Widget _buildTextField({
+    required String hintText,
+    required TextEditingController controller,
+    bool isObscure = false,
+  }) {
     return TextField(
+      controller: controller,
       obscureText: isObscure,
+      keyboardType: hintText == 'Email' ? TextInputType.emailAddress : null,
       decoration: InputDecoration(
         hintText: hintText,
         hintStyle: const TextStyle(color: Colors.black38, fontSize: 13),
@@ -254,7 +289,10 @@ class LoginScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildButton({required String text, required VoidCallback onPressed}) {
+  Widget _buildButton({
+    required String text,
+    required VoidCallback? onPressed,
+  }) {
     return SizedBox(
       width: double.infinity,
       height: 46,

@@ -1,8 +1,6 @@
 import 'dart:typed_data';
 
 import 'package:camera/camera.dart';
-import 'package:flutter/foundation.dart'
-    show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uku_app/data/category_icons.dart';
@@ -16,6 +14,38 @@ class ExpenseScreen extends StatefulWidget {
 
   @override
   State<ExpenseScreen> createState() => _ExpenseScreenState();
+}
+
+class _ReceiptScanPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final frame = Rect.fromCenter(
+      center: Offset(size.width / 2, size.height / 2),
+      width: size.width * 0.76,
+      height: size.height * 0.66,
+    );
+    final paint = Paint()
+      ..color = Colors.white
+      ..strokeWidth = 3
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.square;
+    final corner = size.width * 0.09;
+
+    canvas
+      ..drawLine(frame.topLeft, frame.topLeft + Offset(corner, 0), paint)
+      ..drawLine(frame.topLeft, frame.topLeft + Offset(0, corner), paint)
+      ..drawLine(frame.topRight, frame.topRight + Offset(-corner, 0), paint)
+      ..drawLine(frame.topRight, frame.topRight + Offset(0, corner), paint)
+      ..drawLine(frame.bottomLeft, frame.bottomLeft + Offset(corner, 0), paint)
+      ..drawLine(frame.bottomLeft, frame.bottomLeft + Offset(0, -corner), paint)
+      ..drawLine(
+          frame.bottomRight, frame.bottomRight + Offset(-corner, 0), paint)
+      ..drawLine(
+          frame.bottomRight, frame.bottomRight + Offset(0, -corner), paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class _ExpenseScreenState extends State<ExpenseScreen> {
@@ -34,12 +64,6 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
   CameraController? _cameraController;
   bool _cameraLoading = false;
   String? _cameraError;
-
-  bool get _usesDesktopCamera => const {
-        TargetPlatform.windows,
-        TargetPlatform.linux,
-        TargetPlatform.macOS,
-      }.contains(defaultTargetPlatform);
 
   static const inputModes = ['Manual', 'Foto Bill', 'AIku'];
 
@@ -96,18 +120,26 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
     final amount =
         double.tryParse(_amount.text.replaceAll('.', '').replaceAll(',', '')) ??
             0;
-    widget.store.addExpense(Expense(
+    final expense = Expense(
       category: selectedCategory,
       amount: amount,
       date: selectedDate,
       location: _location.text.trim(),
       purpose: _purpose.text.trim(),
       method: selectedMethod,
-    ));
+    );
     var saveMessage = 'Pengeluaran berhasil dicatat';
     try {
-      await widget.store.persistFinancialData();
+      await widget.store.recordExpense(expense);
     } on Exception {
+      if (widget.store.isApiBacked) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Pengeluaran gagal disimpan ke server.')),
+        );
+        return;
+      }
       saveMessage =
           'Pengeluaran dicatat, tetapi gagal disimpan untuk sesi berikutnya.';
     }
@@ -136,7 +168,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
       _showBillCamera = inputMode == 'Foto Bill';
     });
     if (inputMode == 'Foto Bill') {
-      if (_usesDesktopCamera) _initializeDesktopCamera();
+      _initializeCamera();
       return;
     }
     Future<void>.delayed(const Duration(milliseconds: 280), () {
@@ -160,7 +192,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
     }
   }
 
-  Future<void> _initializeDesktopCamera() async {
+  Future<void> _initializeCamera() async {
     setState(() {
       _cameraLoading = true;
       _cameraError = null;
@@ -199,7 +231,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
     }
   }
 
-  Future<void> _captureDesktopImage() async {
+  Future<void> _captureImage() async {
     final controller = _cameraController;
     if (controller == null || !controller.value.isInitialized) return;
     try {
@@ -282,11 +314,16 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                     if (_billImage != null)
                       Image.memory(_billImage!, fit: BoxFit.contain),
                     if (_billImage == null &&
-                        _usesDesktopCamera &&
                         _cameraController?.value.isInitialized == true)
                       CameraPreview(_cameraController!),
                     if (_billImage == null &&
-                        _usesDesktopCamera &&
+                        _cameraController?.value.isInitialized == true)
+                      Positioned.fill(
+                        child: IgnorePointer(
+                          child: CustomPaint(painter: _ReceiptScanPainter()),
+                        ),
+                      ),
+                    if (_billImage == null &&
                         _cameraController?.value.isInitialized != true)
                       Center(
                         child: _cameraLoading
@@ -303,7 +340,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                                   ),
                                   const SizedBox(height: 8),
                                   TextButton.icon(
-                                    onPressed: _initializeDesktopCamera,
+                                    onPressed: _initializeCamera,
                                     icon: const Icon(Icons.refresh),
                                     label: const Text('Coba lagi'),
                                   ),
@@ -335,11 +372,10 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                           _cameraActionButton(
                             tooltip: 'Ambil foto',
                             icon: Icons.camera_alt_outlined,
-                            onPressed: _usesDesktopCamera
-                                ? _cameraController?.value.isInitialized == true
-                                    ? _captureDesktopImage
-                                    : null
-                                : () => _pickBillImage(ImageSource.camera),
+                            onPressed:
+                                _cameraController?.value.isInitialized == true
+                                    ? _captureImage
+                                    : () => _pickBillImage(ImageSource.camera),
                           ),
                           const SizedBox(width: 20),
                           _cameraActionButton(

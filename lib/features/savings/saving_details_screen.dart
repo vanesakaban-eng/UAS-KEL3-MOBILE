@@ -37,15 +37,24 @@ class _SavingDetailsScreenState extends State<SavingDetailsScreen> {
     return double.tryParse(value.replaceAll('.', '').replaceAll(',', '')) ?? 0;
   }
 
-  void _save() {
+  Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
-    widget.store.addSaving(
-      _nameController.text.trim(),
-      _parseAmount(_targetController.text),
-      _noteController.text.trim(),
-      category: widget.category.name,
-    );
+    try {
+      await widget.store.createSaving(
+        name: _nameController.text.trim(),
+        target: _parseAmount(_targetController.text),
+        note: _noteController.text.trim(),
+        category: widget.category.name,
+      );
+    } on Exception {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Target tabungan gagal disimpan.')),
+      );
+      return;
+    }
+    if (!mounted) return;
     Navigator.pop(context, true);
   }
 

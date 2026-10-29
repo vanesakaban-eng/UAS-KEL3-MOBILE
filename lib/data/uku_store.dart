@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uku_app/data/category_icons.dart';
+import 'package:uku_app/data/mobile_api.dart';
 
 class Expense {
   Expense({
@@ -61,8 +62,10 @@ class Saving {
     required this.current,
     required this.note,
     this.category = 'Lainnya',
+    this.id,
   });
 
+  final int? id;
   final String name;
   final double target;
   double current;
@@ -73,18 +76,22 @@ class Saving {
 }
 
 class UkuStore extends ChangeNotifier {
-  UkuStore() : _persistChanges = false;
+  UkuStore() : _persistChanges = false, _api = null;
 
-  UkuStore._persisted() : _persistChanges = true;
+  UkuStore._persisted() : _persistChanges = true, _api = null;
+
+  UkuStore._apiBacked(this._api) : _persistChanges = false;
 
   static const _budgetKey = 'financial.budget';
   static const _budgetMonthKey = 'financial.budget_month';
   static const _expensesKey = 'financial.expenses';
 
   final bool _persistChanges;
+  final MobileApi? _api;
+  bool get isApiBacked => _api != null;
   double budget = 1500000;
   DateTime budgetMonth = DateTime.now();
-  final double income = 1000000;
+  double income = 1000000;
 
   final List<FinancialActivity> _otherActivities = [
     FinancialActivity(
@@ -160,6 +167,64 @@ class UkuStore extends ChangeNotifier {
     return store;
   }
 
+  static Future<UkuStore> loadFromApi(MobileApi api) async {
+    final store = UkuStore._apiBacked(api);
+    final results = await Future.wait([
+      api.dashboard(),
+      api.transactions(),
+      api.savings(),
+    ]);
+    final dashboard = results[0] as Map<String, dynamic>;
+    final transactions = results[1] as List<Map<String, dynamic>>;
+    final remoteSavings = results[2] as List<Map<String, dynamic>>;
+
+    store.expenses.clear();
+    store._otherActivities.clear();
+    store.savings.clear();
+    store.budget = (dashboard['budget'] as num?)?.toDouble() ?? 0;
+    store.income = (dashboard['income'] as num?)?.toDouble() ?? 0;
+    store.budgetMonth = DateTime.parse(
+        '${dashboard['month'] ?? DateTime.now().toIso8601String().substring(0, 7)}-01');
+
+    for (final item in transactions) {
+      final date = DateTime.parse(item['date'] as String);
+      final amount = (item['amount'] as num).toDouble();
+      final type = item['type'] as String;
+      if (type == 'expense') {
+        store.expenses.add(Expense(
+          category: item['category'] as String,
+          amount: amount,
+          date: date,
+          location: item['location'] as String? ?? '',
+          purpose: item['purpose'] as String? ?? '',
+          method: item['method'] as String? ?? '',
+        ));
+      } else {
+        store._otherActivities.add(FinancialActivity(
+          type: type == 'income' ? ActivityType.income : ActivityType.saving,
+          title: item['title'] as String? ?? item['category'] as String,
+          amount: amount,
+          date: date,
+          description: item['purpose'] as String? ?? '',
+          location: item['location'] as String? ?? '',
+          method: item['method'] as String? ?? '',
+          category: item['category'] as String?,
+        ));
+      }
+    }
+    for (final item in remoteSavings) {
+      store.savings.add(Saving(
+        id: (item['id'] as num).toInt(),
+        name: item['name'] as String,
+        target: (item['target'] as num).toDouble(),
+        current: (item['current'] as num).toDouble(),
+        note: item['note'] as String? ?? '',
+        category: item['category'] as String? ?? 'Lainnya',
+      ));
+    }
+    return store;
+  }
+
   Future<void> persistFinancialData() async {
     if (!_persistChanges) return;
     final preferences = await SharedPreferences.getInstance();
@@ -227,10 +292,37 @@ class UkuStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> recordExpense(Expense expense) async {
+    final api = _api;
+    if (api != null) {
+      await api.createTransaction(
+        type: 'expense',
+        category: expense.category,
+        amount: expense.amount,
+        date: expense.date.toIso8601String().substring(0, 10),
+        location: expense.location,
+        purpose: expense.purpose,
+        method: expense.method,
+      );
+    }
+    addExpense(expense);
+    if (api == null) await persistFinancialData();
+  }
+
   void setBudget(double value) {
     budget = value;
     budgetMonth = DateTime.now();
     notifyListeners();
+  }
+
+  Future<void> saveBudget(double value) async {
+    final api = _api;
+    if (api != null) {
+      final month = DateTime.now().toIso8601String().substring(0, 7);
+      await api.saveBudget(value, month);
+    }
+    setBudget(value);
+    if (api == null) await persistFinancialData();
   }
 
   void addSaving(String name, double target, String note,
@@ -244,8 +336,35 @@ class UkuStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> createSaving({
+    required String name,
+    required double target,
+    required String note,
+    required String category,
+  }) async {
+    final api = _api;
+    final id = api == null
+        ? null
+        : await api.createSaving(
+            name: name,
+            target: target,
+            note: note,
+            category: category,
+          );
+    savings.add(Saving(
+      id: id,
+      name: name,
+      target: target,
+      current: 0,
+      note: note,
+      category: category,
+    ));
+    notifyListeners();
+  }
+
   void addSavingBalance(Saving saving, double amount) {
     saving.current += amount;
+    income += amount;
     _otherActivities.insert(
       0,
       FinancialActivity(
@@ -260,6 +379,16 @@ class UkuStore extends ChangeNotifier {
       ),
     );
     notifyListeners();
+  }
+
+  Future<void> addSavingDeposit(Saving saving, double amount) async {
+    final api = _api;
+    if (api != null) {
+      final id = saving.id;
+      if (id == null) throw StateError('ID target tabungan tidak tersedia.');
+      await api.addSavingDeposit(savingId: id, amount: amount);
+    }
+    addSavingBalance(saving, amount);
   }
 
   List<Expense> expensesForMonth(DateTime month) {

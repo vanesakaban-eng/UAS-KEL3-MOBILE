@@ -47,8 +47,15 @@ class _SavingScreenState extends State<SavingScreen> {
       builder: (_) => const _AddSavingBalanceDialog(),
     );
     if (amount != null && mounted) {
-      widget.store.addSavingBalance(saving, amount);
-      setState(() {});
+      try {
+        await widget.store.addSavingDeposit(saving, amount);
+        if (mounted) setState(() {});
+      } on Exception {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Setoran gagal disimpan.')),
+        );
+      }
     }
   }
 

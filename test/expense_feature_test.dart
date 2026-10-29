@@ -101,7 +101,8 @@ void main() {
     await tester.tap(find.text('Foto Bill'));
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(InkWell, 'Belanja'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 350));
 
     expect(find.text('Catat Pengeluaran foto bill'), findsOneWidget);
     expect(find.byTooltip('Pilih foto dari galeri'), findsOneWidget);

@@ -36,11 +36,17 @@ class _BudgetScreenState extends State<BudgetScreen> {
       return;
     }
 
-    widget.store.setBudget(amount);
     var saveMessage = 'Budget berhasil disimpan';
     try {
-      await widget.store.persistFinancialData();
+      await widget.store.saveBudget(amount);
     } on Exception {
+      if (widget.store.isApiBacked) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Budget gagal disimpan ke server.')),
+        );
+        return;
+      }
       saveMessage =
           'Budget diubah, tetapi gagal disimpan untuk sesi berikutnya.';
     }

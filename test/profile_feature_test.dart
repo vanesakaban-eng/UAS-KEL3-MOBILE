@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uku_app/data/profile_settings_repository.dart';
+import 'package:uku_app/features/profile/change_password_screen.dart';
 import 'package:uku_app/features/profile/edit_profil.dart';
 import 'package:uku_app/navigation/main_navigation.dart';
 
@@ -20,7 +21,7 @@ class _FakeProfileSettingsRepository implements ProfileSettingsRepository {
   @override
   Future<void> save(ProfileSettings value, {String? password}) async {
     profile = value;
-    this.password = password;
+    if (password != null) this.password = password;
   }
 }
 
@@ -31,35 +32,58 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
+    final repository = _FakeProfileSettingsRepository();
     await tester.pumpWidget(MaterialApp(
       home: EditProfileScreen(
-        repository: _FakeProfileSettingsRepository(),
+        repository: repository,
+        onSaved: () {},
       ),
     ));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     expect(find.text('Edit Profil'), findsOneWidget);
     expect(find.text('Nama'), findsOneWidget);
     expect(find.text('Email'), findsOneWidget);
     expect(find.text('Username'), findsOneWidget);
-    expect(find.text('Password'), findsOneWidget);
     expect(find.text('Nomor Telepon'), findsOneWidget);
-    expect(find.text('type here'), findsNWidgets(5));
-    expect(find.byType(TextFormField), findsNWidgets(5));
+    expect(find.text('type here'), findsNWidgets(4));
+    expect(find.byType(TextFormField), findsNWidgets(4));
+    expect(find.text('Ubah Kata Sandi'), findsOneWidget);
     expect(find.widgetWithText(ElevatedButton, 'LOGOUT'), findsOneWidget);
 
-    final password = tester.widget<EditableText>(
-      find.byType(EditableText).at(3),
-    );
-    expect(password.obscureText, isTrue);
-    expect(password.controller.text, 'saved-password');
+    await tester.tap(find.text('Ubah Kata Sandi'));
+    await tester.pumpAndSettle();
+    expect(find.byType(ChangePasswordScreen), findsOneWidget);
+    expect(find.text('Kata Sandi Lama'), findsOneWidget);
+    expect(find.text('Kata Sandi Baru'), findsOneWidget);
+    expect(find.text('Konfirmasi Kata Sandi Baru'), findsOneWidget);
+    expect(find.text('Perbarui Kata Sandi'), findsOneWidget);
+    expect(find.text('Batalkan'), findsOneWidget);
+    expect(find.text('Lupa Password?'), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Tampilkan password'));
-    await tester.pump();
-    expect(
-      tester.widget<EditableText>(find.byType(EditableText).at(3)).obscureText,
-      isFalse,
+    await tester.enterText(find.byType(TextFormField).at(0), 'saved-password');
+    await tester.enterText(find.byType(TextFormField).at(1), 'new-password');
+    await tester.enterText(
+      find.byType(TextFormField).at(2),
+      'different-password',
     );
+    await tester.tap(find.text('Perbarui Kata Sandi'));
+    await tester.pumpAndSettle();
+    expect(find.text('Konfirmasi kata sandi tidak sesuai.'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextFormField).at(0), 'wrong-password');
+    await tester.enterText(find.byType(TextFormField).at(1), 'new-password');
+    await tester.enterText(find.byType(TextFormField).at(2), 'new-password');
+    await tester.tap(find.text('Perbarui Kata Sandi'));
+    await tester.pumpAndSettle();
+    expect(find.text('Kata sandi lama tidak sesuai.'), findsOneWidget);
+    expect(repository.password, 'saved-password');
+
+    await tester.enterText(find.byType(TextFormField).at(0), 'saved-password');
+    await tester.tap(find.text('Perbarui Kata Sandi'));
+    await tester.pumpAndSettle();
+    expect(repository.password, 'new-password');
+    expect(find.text('Edit Profil'), findsOneWidget);
   });
 
   testWidgets('profile is the rightmost main navigation destination',

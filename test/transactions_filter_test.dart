@@ -25,48 +25,77 @@ void main() {
     await tester.tap(find.byTooltip('Filter transaksi'));
     await tester.pumpAndSettle();
     expect(find.byType(ChoiceChip), findsNWidgets(3));
+    expect(find.text('Pilih Filter'), findsOneWidget);
+    expect(find.text('Atur Ulang'), findsOneWidget);
+    expect(find.text('Terapkan'), findsOneWidget);
+    expect(
+      tester.getCenter(find.byTooltip('Tutup filter')).dx,
+      greaterThan(tester.getCenter(find.text('Pilih Filter')).dx),
+    );
     expect(find.widgetWithText(ChoiceChip, 'Tabungan'), findsOneWidget);
     expect(find.widgetWithText(ChoiceChip, 'Pengeluaran'), findsOneWidget);
     expect(find.widgetWithText(ChoiceChip, 'Pemasukan'), findsOneWidget);
 
     await tester.tap(find.widgetWithText(ChoiceChip, 'Pengeluaran'));
     await tester.pumpAndSettle();
+    final selectedTypeChip = tester.widget<ChoiceChip>(
+      find.widgetWithText(ChoiceChip, 'Pengeluaran'),
+    );
+    expect(selectedTypeChip.selectedColor, const Color(0xFFFF8800));
+    expect(selectedTypeChip.labelStyle?.color, Colors.white);
     expect(find.widgetWithText(ChoiceChip, 'Hiburan'), findsOneWidget);
     expect(find.widgetWithText(ChoiceChip, 'Pendidikan'), findsOneWidget);
     final pakaianFilter = find.widgetWithText(ChoiceChip, 'Pakaian');
     await tester.ensureVisible(pakaianFilter);
     await tester.tap(pakaianFilter);
     await tester.pumpAndSettle();
+    await tester.tap(find.text('Terapkan'));
+    await tester.pumpAndSettle();
 
-    expect(find.text('Pakaian'), findsNWidgets(2));
+    expect(find.text('Pakaian'), findsOneWidget);
     expect(find.text('Pemasukan bulanan'), findsNothing);
     expect(find.text('Jalan - jalan ke Bali'), findsNothing);
 
-    final allFilter = find.widgetWithText(ChoiceChip, 'Semua');
-    await tester.ensureVisible(allFilter);
-    await tester.tap(allFilter);
+    await tester.tap(find.byTooltip('Filter transaksi'));
+    await tester.pumpAndSettle();
+    final reopenedAllFilter = find.widgetWithText(ChoiceChip, 'Semua');
+    await tester.ensureVisible(reopenedAllFilter);
+    await tester.tap(reopenedAllFilter);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Terapkan'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Pakaian'), findsNWidgets(2));
+    expect(find.text('Pakaian'), findsOneWidget);
     expect(find.text('Pemasukan bulanan'), findsNothing);
     expect(find.text('Jalan - jalan ke Bali'), findsNothing);
 
-    final savingFilter = find.widgetWithText(ChoiceChip, 'Tabungan');
-    await tester.ensureVisible(savingFilter);
-    await tester.tap(savingFilter);
+    await tester.tap(find.byTooltip('Filter transaksi'));
     await tester.pumpAndSettle();
-    expect(find.text('Jenis tabungan'), findsOneWidget);
+    final reopenedSavingFilter = find.widgetWithText(ChoiceChip, 'Tabungan');
+    await tester.ensureVisible(reopenedSavingFilter);
+    await tester.tap(reopenedSavingFilter);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Terapkan'));
+    await tester.pumpAndSettle();
     expect(find.text('Jalan - jalan ke Bali'), findsOneWidget);
 
-    final incomeFilter = find.widgetWithText(ChoiceChip, 'Pemasukan');
-    await tester.ensureVisible(incomeFilter);
-    await tester.tap(incomeFilter);
+    await tester.tap(find.byTooltip('Filter transaksi'));
+    await tester.pumpAndSettle();
+    expect(find.text('Jenis tabungan'), findsOneWidget);
+    final reopenedIncomeFilter = find.widgetWithText(ChoiceChip, 'Pemasukan');
+    await tester.ensureVisible(reopenedIncomeFilter);
+    await tester.tap(reopenedIncomeFilter);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Terapkan'));
     await tester.pumpAndSettle();
     expect(find.text('Pemasukan bulanan'), findsOneWidget);
     expect(find.text('Jalan - jalan ke Bali'), findsNothing);
     expect(find.text('Jenis tabungan'), findsNothing);
 
-    await tester.tap(incomeFilter);
+    await tester.tap(find.byTooltip('Filter transaksi'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Pemasukan'));
+    await tester.tap(find.text('Terapkan'));
     await tester.pumpAndSettle();
     expect(find.text('Pemasukan bulanan'), findsOneWidget);
     expect(find.text('Jalan - jalan ke Bali'), findsOneWidget);
@@ -107,6 +136,8 @@ void main() {
     await tester.ensureVisible(pendidikanFilter);
     await tester.tap(pendidikanFilter);
     await tester.pumpAndSettle();
+    await tester.tap(find.text('Terapkan'));
+    await tester.pumpAndSettle();
     expect(
       find.text('Tidak ada pengeluaran untuk kategori Pendidikan'),
       findsOneWidget,
@@ -132,6 +163,8 @@ void main() {
     final liburanFilter = find.widgetWithText(ChoiceChip, 'Liburan');
     await tester.ensureVisible(liburanFilter);
     await tester.tap(liburanFilter);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Terapkan'));
     await tester.pumpAndSettle();
     expect(find.text('Jalan - jalan ke Bali'), findsOneWidget);
     expect(find.text('Tabungan Pakaian'), findsNothing);

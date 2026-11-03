@@ -107,7 +107,7 @@ class MobileApi {
     required String password,
   }) =>
       _authenticate('/auth/register', {
-        'name': name,
+        'nama': name,
         'email': email,
         'password': password,
       });

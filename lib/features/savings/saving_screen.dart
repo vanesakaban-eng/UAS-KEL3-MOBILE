@@ -281,15 +281,25 @@ class _AddSavingBalanceDialogState extends State<_AddSavingBalanceDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      backgroundColor: Colors.white,
+      surfaceTintColor: Colors.white,
       title: const Text('Tambah Saldo'),
       content: TextField(
         controller: _controller,
         keyboardType: TextInputType.number,
-        decoration: const InputDecoration(prefixText: 'Rp '),
+        decoration: const InputDecoration(
+          prefixText: 'Rp ',
+          focusedBorder: UnderlineInputBorder(
+            borderSide: BorderSide(color: Color(0xFFFFAD2F)),
+          ),
+        ),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
+          style: TextButton.styleFrom(
+            foregroundColor: const Color(0xFFFFAD2F),
+          ),
           child: const Text('Batal'),
         ),
         ElevatedButton(
@@ -301,6 +311,10 @@ class _AddSavingBalanceDialogState extends State<_AddSavingBalanceDialog> {
               Navigator.pop(context, amount);
             }
           },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFFFFAD2F),
+            foregroundColor: Colors.white,
+          ),
           child: const Text('Tambah'),
         ),
       ],

@@ -18,7 +18,7 @@ Basis project yang dipakai adalah `UAS-KEL3-MOBILE`. Asset gambar dan ikon dari 
 ## Menjalankan
 ```bash
 flutter pub get
-flutter run --dart-define=API_BASE_URL=http://10.0.2.2:5001/api
+flutter run --dart-define=API_BASE_URL=http://10.0.2.2:5000/api
 ```
 
-Jalankan backend mobile dari folder `backend/mobile` dengan `npm install` lalu `npm run dev`. URL `10.0.2.2` dipakai untuk Android Emulator. Untuk perangkat fisik, ganti `API_BASE_URL` dengan alamat IP LAN komputer yang menjalankan backend; untuk Windows desktop gunakan `http://localhost:5001/api`.
+Jalankan backend mobile dari folder `backend/mobile` dengan `npm install` lalu `npm run dev`. URL `10.0.2.2` dipakai untuk Android Emulator. Untuk perangkat fisik, ganti `API_BASE_URL` dengan alamat IP LAN komputer yang menjalankan backend; untuk Windows desktop gunakan `http://localhost:5000/api`.

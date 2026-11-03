@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uku_app/data/profile_settings_repository.dart';
+import 'package:uku_app/features/auth/forgot_password_screen.dart';
 import 'package:uku_app/features/profile/change_password_screen.dart';
 import 'package:uku_app/features/profile/edit_profil.dart';
 import 'package:uku_app/navigation/main_navigation.dart';
@@ -33,6 +34,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     final repository = _FakeProfileSettingsRepository();
+    repository.profile = const ProfileSettings(email: 'user@example.com');
     await tester.pumpWidget(MaterialApp(
       home: EditProfileScreen(
         repository: repository,
@@ -60,6 +62,17 @@ void main() {
     expect(find.text('Perbarui Kata Sandi'), findsOneWidget);
     expect(find.text('Batalkan'), findsOneWidget);
     expect(find.text('Lupa Password?'), findsOneWidget);
+
+    await tester.tap(find.text('Lupa Password?'));
+    await tester.pumpAndSettle();
+    expect(find.byType(ForgotPasswordScreen), findsOneWidget);
+    expect(find.text('Kirim Kode Reset'), findsOneWidget);
+    expect(
+      tester.widget<TextField>(find.byType(TextField).first).controller!.text,
+      'user@example.com',
+    );
+    await tester.tap(find.byTooltip('Kembali'));
+    await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextFormField).at(0), 'saved-password');
     await tester.enterText(find.byType(TextFormField).at(1), 'new-password');
@@ -110,5 +123,43 @@ void main() {
     await tester.tap(find.byTooltip('Kembali'));
     await tester.pumpAndSettle();
     expect(find.text('Halo, User'), findsOneWidget);
+  });
+
+  testWidgets('forgot password uses the password page styling', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: ForgotPasswordScreen(initialEmail: 'user@example.com'),
+      ),
+    );
+
+    expect(find.text('Lupa Password'), findsOneWidget);
+    expect(find.text('Email Akun'), findsOneWidget);
+    expect(find.text('Kirim Kode Reset'), findsOneWidget);
+    expect(find.byTooltip('Kembali'), findsOneWidget);
+    expect(find.byType(AppBar), findsNothing);
+    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,
+        'user@example.com');
+
+    final emailField = find.byType(TextField);
+    final inputDecoration = tester.widget<TextField>(emailField).decoration!;
+    expect(inputDecoration.border, isA<OutlineInputBorder>());
+    expect(
+      (inputDecoration.border as OutlineInputBorder).borderRadius,
+      BorderRadius.circular(7),
+    );
+    expect(
+      tester.getSize(find
+          .ancestor(
+            of: emailField,
+            matching: find.byType(SizedBox),
+          )
+          .first),
+      const Size(334, 34),
+    );
   });
 }

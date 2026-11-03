@@ -12,7 +12,6 @@ class HomeScreenContent extends StatelessWidget {
     required this.store,
     required this.onExpense,
     this.userName = 'User',
-    this.onBudget,
     this.onRecap,
     this.onSaving,
     this.onSavingTarget,
@@ -22,7 +21,6 @@ class HomeScreenContent extends StatelessWidget {
   final UkuStore store;
   final String userName;
   final VoidCallback onExpense;
-  final VoidCallback? onBudget;
   final VoidCallback? onRecap;
   final VoidCallback? onSaving;
   final ValueChanged<Saving>? onSavingTarget;
@@ -57,28 +55,34 @@ class HomeScreenContent extends StatelessWidget {
                                     fontWeight: FontWeight.bold))
                           ]),
                           const SizedBox(height: 12),
-                          const Text('Sisa Budget',
-                              style: TextStyle(
-                                  color: Colors.white70, fontSize: 14)),
-                          const SizedBox(height: 4),
-                          InkWell(
-                              onTap: onBudget,
-                              borderRadius: BorderRadius.circular(10),
-                              child: FractionallySizedBox(
-                                  widthFactor: 0.5,
-                                  alignment: Alignment.centerLeft,
-                                  child: Container(
-                                      width: double.infinity,
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 14, vertical: 8),
-                                      decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          borderRadius:
-                                              BorderRadius.circular(10)),
-                                      child: Text(rupiah(store.remainingBudget),
-                                          style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 16))))),
+                          FractionallySizedBox(
+                            widthFactor: 0.5,
+                            alignment: Alignment.centerLeft,
+                            child: AbsorbPointer(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('Sisa Budget',
+                                      style: TextStyle(
+                                          color: Colors.white70, fontSize: 14)),
+                                  const SizedBox(height: 4),
+                                  Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 14, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Text(rupiah(store.remainingBudget),
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                           const SizedBox(height: 12),
                           Row(children: [
                             _buildInfoBox(

@@ -92,8 +92,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     );
   }
 
-  void openBudget() => setState(() => currentIndex = 2);
-
   void openSavings([Saving? saving]) {
     setState(() {
       currentIndex = 0;
@@ -132,7 +130,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           store: store,
           userName: widget.userName,
           onExpense: openExpense,
-          onBudget: openBudget,
           onRecap: () => setState(() => showRecap = true),
           onSaving: () => openSavings(),
           onSavingTarget: openSavings,

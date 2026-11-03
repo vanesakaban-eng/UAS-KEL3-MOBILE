@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:uku_app/data/profile_settings_repository.dart';
+import 'package:uku_app/features/auth/forgot_password_screen.dart';
 import 'package:uku_app/widgets/app_back_button.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
@@ -90,22 +91,23 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     );
   }
 
-  Future<void> _showForgotPasswordInfo() async {
-    await showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        content: const Text(
-          'Pemulihan kata sandi belum tersedia. '
-          'Untuk memperbarui kata sandi, masukkan kata sandi lama Anda.',
+  Future<void> _openForgotPassword() async {
+    try {
+      final profile = await widget.repository.load();
+      if (!mounted) return;
+      final email = await Navigator.push<String>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ForgotPasswordScreen(initialEmail: profile.email),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Mengerti'),
-          ),
-        ],
-      ),
-    );
+      );
+      if (email != null && mounted) {
+        Navigator.pop(context, true);
+      }
+    } on Exception catch (error) {
+      if (!mounted) return;
+      _showMessage('Gagal memuat email akun: $error');
+    }
   }
 
   Widget _buildPasswordField(
@@ -287,7 +289,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                     ),
                     Center(
                       child: TextButton(
-                        onPressed: _showForgotPasswordInfo,
+                        onPressed: _openForgotPassword,
                         style: TextButton.styleFrom(
                           foregroundColor: _orange,
                           textStyle: const TextStyle(fontSize: 12),

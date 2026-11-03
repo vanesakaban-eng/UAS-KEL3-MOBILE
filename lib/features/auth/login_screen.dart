@@ -165,28 +165,17 @@ class _LoginScreenState extends State<LoginScreen> {
                             child: IntrinsicWidth(
                               child: IntrinsicHeight(
                                 child: Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(15),
-                                    color: Color(0xFFFAAE36),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Color(0x36000000),
-                                        blurRadius: 10,
-                                        offset: Offset(0, 0),
-                                      ),
-                                    ],
-                                  ),
                                   padding: const EdgeInsets.all(9),
-                                  margin: const EdgeInsets.only(right: 32),
+                                  // margin: const EdgeInsets.only(right: 24),
                                   child: Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
                                         Container(
-                                            width: 36,
-                                            height: 36,
-                                            child: Image.network(
-                                              "https://storage.googleapis.com/tagjs-prod.appspot.com/v1/EkWxkRXtj2/yto9kz03_expires_30_days.png",
+                                            width: 80,
+                                            height: 80,
+                                            child: Image.asset(
+                                              'assets/icons/google.png',
                                               fit: BoxFit.fill,
                                             )),
                                       ]),
@@ -201,27 +190,16 @@ class _LoginScreenState extends State<LoginScreen> {
                             child: IntrinsicWidth(
                               child: IntrinsicHeight(
                                 child: Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(15),
-                                    color: Color(0xFFFAAE36),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Color(0x36000000),
-                                        blurRadius: 10,
-                                        offset: Offset(0, 0),
-                                      ),
-                                    ],
-                                  ),
                                   padding: const EdgeInsets.all(4),
                                   child: Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
                                         Container(
-                                            width: 46,
-                                            height: 46,
-                                            child: Image.network(
-                                              "https://storage.googleapis.com/tagjs-prod.appspot.com/v1/EkWxkRXtj2/5q3bpj2q_expires_30_days.png",
+                                            width: 80,
+                                            height: 80,
+                                            child: Image.asset(
+                                              'assets/icons/facebook.png',
                                               fit: BoxFit.fill,
                                             )),
                                       ]),

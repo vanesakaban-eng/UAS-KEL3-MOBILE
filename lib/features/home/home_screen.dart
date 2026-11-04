@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:uku_app/data/uku_store.dart';
 import 'package:uku_app/features/expense/recap_screen.dart';
-import 'package:uku_app/features/expense/transactions_screen.dart';
+import 'package:uku_app/features/savings/saving_card.dart';
 import 'package:uku_app/features/savings/saving_detail_screen.dart';
 import 'package:uku_app/features/savings/saving_screen.dart';
 
@@ -15,7 +15,6 @@ class HomeScreenContent extends StatelessWidget {
     this.onRecap,
     this.onSaving,
     this.onSavingTarget,
-    this.onTransactions,
     this.onExpenseDetails,
   });
   final UkuStore store;
@@ -24,7 +23,6 @@ class HomeScreenContent extends StatelessWidget {
   final VoidCallback? onRecap;
   final VoidCallback? onSaving;
   final ValueChanged<Saving>? onSavingTarget;
-  final VoidCallback? onTransactions;
   final VoidCallback? onExpenseDetails;
 
   @override
@@ -32,9 +30,9 @@ class HomeScreenContent extends StatelessWidget {
     return AnimatedBuilder(
         animation: store,
         builder: (context, _) {
-          final activities = store.activities;
-          final latest = activities.isEmpty ? null : activities.first;
           final featuredSaving = store.latestSaving;
+          final latestActivity =
+              store.activities.isEmpty ? null : store.activities.first;
           return SafeArea(
               child: SingleChildScrollView(
                   child: Column(
@@ -238,7 +236,7 @@ class HomeScreenContent extends StatelessWidget {
                                         ),
                                       ),
                                       child: const Text(
-                                        'Klik Untuk Detail Transaksi',
+                                        'Lihat Detail Pengeluaran',
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.bold,
@@ -248,43 +246,47 @@ class HomeScreenContent extends StatelessWidget {
                                   ),
                                 ],
                               )),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 14),
                           _buildSectionCard(
-                              title: 'Transaksi',
-                              iconPath: 'assets/icons/PaymentHistory.png',
-                              subtitle: latest == null
-                                  ? 'Belum ada transaksi'
-                                  : '${latest.date.day}/${latest.date.month}/${latest.date.year}',
-                              onTap: onTransactions ??
-                                  () => Navigator.push<void>(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => TransactionsScreen(
-                                            store: store,
-                                          ),
-                                        ),
+                            title: 'Transaksi',
+                            iconPath: 'assets/icons/PaymentHistory.png',
+                            subtitle: latestActivity == null
+                                ? 'Belum ada transaksi'
+                                : '${latestActivity.date.day}/${latestActivity.date.month}/${latestActivity.date.year}',
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFAAE36),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      latestActivity?.title ?? '-',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w500,
                                       ),
-                              child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 14, vertical: 12),
-                                  decoration: BoxDecoration(
-                                      color: const Color(0xFFFA9D2B),
-                                      borderRadius: BorderRadius.circular(10)),
-                                  child: Row(children: [
-                                    Expanded(
-                                        child: Text(latest?.title ?? '-',
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(
-                                                fontWeight: FontWeight.w500))),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                        latest == null
-                                            ? '-'
-                                            : '${latest.type == ActivityType.expense ? '-' : '+'} ${rupiah(latest.amount)}',
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.bold))
-                                  ]))),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    latestActivity == null
+                                        ? '-'
+                                        : '${latestActivity.type == ActivityType.expense ? '-' : '+'} ${rupiah(latestActivity.amount)}',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                           const SizedBox(height: 14),
                           _buildSectionCard(
                               title: 'Nabung',
@@ -317,40 +319,24 @@ class HomeScreenContent extends StatelessWidget {
                                   ? const Text('Belum ada target tabungan',
                                       style: TextStyle(
                                           color: Colors.grey, fontSize: 11))
-                                  : Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 14, vertical: 10),
-                                      decoration: BoxDecoration(
-                                          color: const Color(0xFFFA9D2B),
-                                          borderRadius:
-                                              BorderRadius.circular(10)),
-                                      child: Row(children: [
-                                        Expanded(
-                                            child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                              Text(featuredSaving.name,
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  style: const TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.w500)),
-                                              Text(featuredSaving.note,
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  style: const TextStyle(
-                                                      color: Colors.black54,
-                                                      fontSize: 11))
-                                            ])),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                            '+ ${rupiah(featuredSaving.current)}',
-                                            style: const TextStyle(
-                                                fontWeight: FontWeight.bold))
-                                      ]))),
+                                  : SavingCard(
+                                      store: store,
+                                      saving: featuredSaving,
+                                      onTap: onSavingTarget != null
+                                          ? () => onSavingTarget!(
+                                                featuredSaving,
+                                              )
+                                          : () => Navigator.push<void>(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (_) =>
+                                                      SavingDetailScreen(
+                                                    store: store,
+                                                    saving: featuredSaving,
+                                                  ),
+                                                ),
+                                              ),
+                                    )),
                         ])),
               ])));
         });

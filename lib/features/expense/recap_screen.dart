@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:uku_app/data/uku_store.dart';
+import 'package:uku_app/features/expense/activity_filter.dart';
 import 'package:uku_app/widgets/app_back_button.dart';
 
 class RecapScreen extends StatefulWidget {
@@ -34,6 +35,7 @@ class _RecapScreenState extends State<RecapScreen> {
   ];
 
   late DateTime _month;
+  ActivityFilter _activityFilter = const ActivityFilter();
 
   @override
   void initState() {
@@ -146,6 +148,16 @@ class _RecapScreenState extends State<RecapScreen> {
     }
   }
 
+  Future<void> _openFilters() async {
+    final filter = await showActivityFilterSheet(
+      context,
+      initialFilter: _activityFilter,
+    );
+    if (filter != null) {
+      setState(() => _activityFilter = filter);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
@@ -153,7 +165,8 @@ class _RecapScreenState extends State<RecapScreen> {
       builder: (context, _) {
         final expenses = widget.store.expensesForMonth(_month)
           ..sort((a, b) => b.date.compareTo(a.date));
-        final activities = widget.store.activitiesForMonth(_month);
+        final monthActivities = widget.store.activitiesForMonth(_month);
+        final activities = filterActivities(monthActivities, _activityFilter);
         final dailyTotals = <int, double>{};
         for (final expense in expenses) {
           dailyTotals.update(
@@ -345,20 +358,28 @@ class _RecapScreenState extends State<RecapScreen> {
                           TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                     ),
                   ),
-                  Text(
-                    '${activities.length} aktivitas',
-                    style: const TextStyle(color: Colors.black54, fontSize: 11),
+                  IconButton(
+                    tooltip: 'Filter aktivitas',
+                    onPressed: _openFilters,
+                    icon: Image.asset(
+                      'assets/icons/Group 74.png',
+                      width: 36,
+                      height: 36,
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
               if (activities.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 20),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
                   child: Center(
                     child: Text(
-                      'Belum ada riwayat aktivitas',
-                      style: TextStyle(color: Colors.black54, fontSize: 12),
+                      _activityFilter.hasFilters
+                          ? 'Tidak ada aktivitas sesuai filter'
+                          : 'Belum ada riwayat aktivitas',
+                      style:
+                          const TextStyle(color: Colors.black54, fontSize: 12),
                     ),
                   ),
                 )

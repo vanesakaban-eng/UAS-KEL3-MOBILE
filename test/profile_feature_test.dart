@@ -118,7 +118,7 @@ void main() {
     expect(find.text('Beranda'), findsOneWidget);
     expect(find.text('Pengeluaran'), findsOneWidget);
     expect(find.text('Budget'), findsOneWidget);
-    expect(find.text('Transaksi'), findsOneWidget);
+    expect(find.text('Transaksi'), findsNothing);
 
     await tester.tap(find.byTooltip('Kembali'));
     await tester.pumpAndSettle();

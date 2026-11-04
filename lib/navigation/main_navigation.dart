@@ -81,11 +81,16 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     );
   }
 
-  void openExpense() {
+  void openExpense([String? initialCategory]) {
     Navigator.push<void>(
       context,
       MaterialPageRoute(
-        builder: (_) => Scaffold(body: ExpenseScreen(store: store)),
+        builder: (_) => Scaffold(
+          body: ExpenseScreen(
+            store: store,
+            initialCategory: initialCategory,
+          ),
+        ),
       ),
     );
   }
@@ -129,6 +134,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         HomeScreenContent(
           store: store,
           onExpense: openExpense,
+          onExpenseCategory: (cat) => openExpense(cat),
           onBudget: openBudget,
           onRecap: () => setState(() => showRecap = true),
           onSaving: () => openSavings(),
@@ -153,7 +159,30 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     ];
     return Scaffold(
       body: pages[currentIndex],
-      floatingActionButton: currentIndex == 0 ? null : null,
+      floatingActionButton: FloatingActionButton(
+        tooltip: 'Catat Pengeluaran',
+        onPressed: () => openExpense(),
+        backgroundColor: const Color(0xFFFF8800),
+        elevation: 6,
+        shape: const CircleBorder(),
+        child: Container(
+          width: 56,
+          height: 56,
+          decoration: const BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              colors: [Color(0xFFFAAE36), Color(0xFFFF7A00)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: const Icon(
+            Icons.add_rounded,
+            color: Colors.white,
+            size: 32,
+          ),
+        ),
+      ),
       bottomNavigationBar: Material(
         color: Colors.white,
         elevation: 8,

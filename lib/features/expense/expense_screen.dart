@@ -11,8 +11,13 @@ import 'package:uku_app/features/ai/ai_screen.dart';
 import 'package:uku_app/widgets/app_back_button.dart';
 
 class ExpenseScreen extends StatefulWidget {
-  const ExpenseScreen({super.key, required this.store});
+  const ExpenseScreen({
+    super.key,
+    required this.store,
+    this.initialCategory,
+  });
   final UkuStore store;
+  final String? initialCategory;
 
   @override
   State<ExpenseScreen> createState() => _ExpenseScreenState();
@@ -25,7 +30,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
   final _purpose = TextEditingController();
   int _step = 0;
   String? category;
-  String? method;
+  String? method = 'Tunai';
   String inputMode = 'Manual';
   DateTime selectedDate = DateTime.now();
   final _imagePicker = ImagePicker();
@@ -34,6 +39,15 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
   CameraController? _cameraController;
   bool _cameraLoading = false;
   String? _cameraError;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialCategory != null) {
+      category = widget.initialCategory;
+      _step = 1;
+    }
+  }
 
   bool get _usesDesktopCamera => const {
         TargetPlatform.windows,
@@ -551,6 +565,61 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                 },
               ),
             ] else ...[
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                margin: const EdgeInsets.only(bottom: 14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF7ED),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: const Color(0xFFFAAE36).withValues(alpha: 0.5)),
+                ),
+                child: Row(
+                  children: [
+                    if (category != null)
+                      Image.asset(
+                        categoryIconPath(category!),
+                        width: 32,
+                        height: 32,
+                        errorBuilder: (_, __, ___) => const Icon(
+                          Icons.category,
+                          color: Color(0xFFFAAE36),
+                        ),
+                      ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Kategori Terpilih',
+                            style:
+                                TextStyle(fontSize: 10, color: Colors.black54),
+                          ),
+                          Text(
+                            category ?? 'Belum dipilih',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFFE07A00),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => setState(() => _step = 0),
+                      style: TextButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                        foregroundColor: const Color(0xFFFAAE36),
+                      ),
+                      child: const Text('Ganti',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
+              ),
               const Text('Jumlah',
                   style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
               const SizedBox(height: 7),
@@ -566,6 +635,32 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                   if (n <= 0) return 'Masukkan jumlah pengeluaran';
                   return null;
                 },
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                children: [10000, 20000, 50000, 100000].map((preset) {
+                  return ActionChip(
+                    label: Text(
+                      '+${preset >= 1000 ? "${preset ~/ 1000}rb" : preset.toString()}',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFFE07A00),
+                      ),
+                    ),
+                    backgroundColor: const Color(0xFFFFF3E0),
+                    side: const BorderSide(color: Color(0xFFFFD180)),
+                    onPressed: () {
+                      final current = double.tryParse(_amount.text
+                              .replaceAll('.', '')
+                              .replaceAll(',', '')) ??
+                          0;
+                      final total = (current + preset).round();
+                      _amount.text = total.toString();
+                    },
+                  );
+                }).toList(),
               ),
               const SizedBox(height: 14),
               const Text('Mau catat untuk kapan?',

@@ -210,7 +210,17 @@ void main() {
     );
 
     expect(find.text('Tabungan Baru'), findsOneWidget);
+    expect(find.text('Liburan · Rencana baru'), findsOneWidget);
+    expect(find.text('Target Rp 2.500.000'), findsOneWidget);
+    expect(find.byType(LinearProgressIndicator), findsOneWidget);
     expect(find.text('Jalan - jalan ke Bali'), findsNothing);
+    await tester.ensureVisible(find.text('Tambah saldo'));
+    await tester.tap(find.text('Tambah saldo'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), '250000');
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Tambah'));
+    await tester.pumpAndSettle();
+    expect(store.savings.last.current, 250000);
     await tester.ensureVisible(find.text('Tabungan Baru'));
     await tester.tap(find.text('Tabungan Baru'));
     expect(selectedSavingName, 'Tabungan Baru');

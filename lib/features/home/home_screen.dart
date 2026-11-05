@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:uku_app/data/uku_store.dart';
 import 'package:uku_app/features/ai/ai_screen.dart';
 import 'package:uku_app/features/expense/recap_screen.dart';
-import 'package:uku_app/features/expense/transactions_screen.dart';
 import 'package:uku_app/features/savings/saving_detail_screen.dart';
 import 'package:uku_app/features/savings/saving_screen.dart';
 
@@ -18,7 +17,6 @@ class HomeScreenContent extends StatelessWidget {
     this.onRecap,
     this.onSaving,
     this.onSavingTarget,
-    this.onTransactions,
     this.onExpenseDetails,
   });
 
@@ -30,7 +28,6 @@ class HomeScreenContent extends StatelessWidget {
   final VoidCallback? onRecap;
   final VoidCallback? onSaving;
   final ValueChanged<Saving>? onSavingTarget;
-  final VoidCallback? onTransactions;
   final VoidCallback? onExpenseDetails;
 
   @override
@@ -74,26 +71,32 @@ class HomeScreenContent extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Halo, $userName 👋',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Halo, $userName 👋',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 2),
-                              const Text(
-                                'Kelola keuangan harianmu dengan bijak',
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 12,
+                                const SizedBox(height: 2),
+                                const Text(
+                                  'Kelola keuangan harianmu dengan bijak',
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 12,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                           Container(
                             padding: const EdgeInsets.symmetric(
@@ -315,15 +318,7 @@ class HomeScreenContent extends StatelessWidget {
                         subtitle: latest == null
                             ? 'Belum ada transaksi'
                             : '${latest.date.day}/${latest.date.month}/${latest.date.year}',
-                        onTap: onTransactions ??
-                            () => Navigator.push<void>(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => TransactionsScreen(
-                                      store: store,
-                                    ),
-                                  ),
-                                ),
+                        onTap: onExpenseDetails,
                         child: latest == null
                             ? const Padding(
                                 padding: EdgeInsets.symmetric(vertical: 8),
@@ -408,10 +403,10 @@ class HomeScreenContent extends StatelessWidget {
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 13,
-                                        color: latest.type ==
-                                                ActivityType.expense
-                                            ? const Color(0xFFD32F2F)
-                                            : const Color(0xFF2E7D32),
+                                        color:
+                                            latest.type == ActivityType.expense
+                                                ? const Color(0xFFD32F2F)
+                                                : const Color(0xFF2E7D32),
                                       ),
                                     ),
                                   ],
@@ -512,19 +507,29 @@ class HomeScreenContent extends StatelessWidget {
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceBetween,
                                       children: [
-                                        Text(
-                                          'Terkumpul: ${rupiah(featuredSaving.current)}',
-                                          style: const TextStyle(
-                                            fontSize: 11,
-                                            color: Colors.black87,
-                                            fontWeight: FontWeight.w500,
+                                        Expanded(
+                                          child: Text(
+                                            'Terkumpul: ${rupiah(featuredSaving.current)}',
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              color: Colors.black87,
+                                              fontWeight: FontWeight.w500,
+                                            ),
                                           ),
                                         ),
-                                        Text(
-                                          'Target: ${rupiah(featuredSaving.target)}',
-                                          style: const TextStyle(
-                                            fontSize: 11,
-                                            color: Colors.black54,
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            'Target: ${rupiah(featuredSaving.target)}',
+                                            maxLines: 1,
+                                            textAlign: TextAlign.end,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              color: Colors.black54,
+                                            ),
                                           ),
                                         ),
                                       ],
@@ -548,10 +553,26 @@ class HomeScreenContent extends StatelessWidget {
   // ==================== HERO ACTION: CATAT PENGELUARAN ====================
   Widget _buildHeroExpenseCard(BuildContext context) {
     const quickCategories = [
-      (label: 'Makan', category: 'Makanan & Minuman', icon: 'assets/icons/Restaurant.png'),
-      (label: 'Transport', category: 'Transportasi', icon: 'assets/icons/Public Transportation.png'),
-      (label: 'Belanja', category: 'Belanja', icon: 'assets/icons/Shopping Bag.png'),
-      (label: 'Hiburan', category: 'Hiburan', icon: 'assets/icons/3D Glasses.png'),
+      (
+        label: 'Makan',
+        category: 'Makanan & Minuman',
+        icon: 'assets/icons/Restaurant.png'
+      ),
+      (
+        label: 'Transport',
+        category: 'Transportasi',
+        icon: 'assets/icons/Public Transportation.png'
+      ),
+      (
+        label: 'Belanja',
+        category: 'Belanja',
+        icon: 'assets/icons/Shopping Bag.png'
+      ),
+      (
+        label: 'Hiburan',
+        category: 'Hiburan',
+        icon: 'assets/icons/3D Glasses.png'
+      ),
     ];
 
     return Container(
@@ -599,7 +620,8 @@ class HomeScreenContent extends StatelessWidget {
                             child: const Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.flash_on_rounded, size: 12, color: Colors.white),
+                                Icon(Icons.flash_on_rounded,
+                                    size: 12, color: Colors.white),
                                 SizedBox(width: 4),
                                 Text(
                                   'CATAT INSTAN',
@@ -615,7 +637,7 @@ class HomeScreenContent extends StatelessWidget {
                           ),
                           const SizedBox(height: 6),
                           const Text(
-                            'Catat Pengeluaran Baru',
+                            'Catat Pengeluaran',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 18,
@@ -660,7 +682,8 @@ class HomeScreenContent extends StatelessWidget {
                 const SizedBox(height: 14),
                 // Quick Category Chips
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                   decoration: BoxDecoration(
                     color: Colors.black.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
@@ -846,11 +869,15 @@ class HomeScreenContent extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Bulan: ${_monthLabel(DateTime.now())}',
-                      style: const TextStyle(
-                        fontSize: 10,
-                        color: Colors.black54,
+                    Expanded(
+                      child: Text(
+                        'Bulan: ${_monthLabel(DateTime.now())}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: Colors.black54,
+                        ),
                       ),
                     ),
                     Row(
@@ -895,7 +922,8 @@ class HomeScreenContent extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                    textStyle: const TextStyle(
+                        fontSize: 11, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -919,7 +947,8 @@ class HomeScreenContent extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                    textStyle: const TextStyle(
+                        fontSize: 11, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -1166,7 +1195,8 @@ class HomeScreenContent extends StatelessWidget {
           ),
           barGroups: [
             _financialBar(0, expense, const Color(0xFFFF7A00)),
-            _financialBar(1, remaining > 0 ? remaining : 0, const Color(0xFF43A047)),
+            _financialBar(
+                1, remaining > 0 ? remaining : 0, const Color(0xFF43A047)),
           ],
         ),
       ),

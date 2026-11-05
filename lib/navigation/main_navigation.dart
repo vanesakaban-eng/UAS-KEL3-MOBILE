@@ -5,7 +5,6 @@ import 'package:uku_app/features/budget/budget_screen.dart';
 import 'package:uku_app/features/expense/expense_screen.dart';
 import 'package:uku_app/features/expense/monthly_expense_screen.dart';
 import 'package:uku_app/features/expense/recap_screen.dart';
-import 'package:uku_app/features/expense/transactions_screen.dart';
 import 'package:uku_app/features/home/home_screen.dart';
 import 'package:uku_app/features/profile/edit_profil.dart';
 import 'package:uku_app/features/savings/saving_screen.dart';
@@ -121,7 +120,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       (label: 'Beranda'),
       (label: 'Pengeluaran'),
       (label: 'Budget'),
-      (label: 'Transaksi'),
       (label: 'Profil'),
     ];
     final pages = [
@@ -149,7 +147,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           onRecap: () => setState(() => showRecap = true),
           onSaving: () => openSavings(),
           onSavingTarget: openSavings,
-          onTransactions: () => setState(() => currentIndex = 3),
           onExpenseDetails: () => setState(() => currentIndex = 1),
         ),
       MonthlyExpenseScreen(
@@ -157,10 +154,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         onBack: () => setState(() => currentIndex = 0),
       ),
       BudgetScreen(store: store),
-      TransactionsScreen(
-        store: store,
-        onBack: () => setState(() => currentIndex = 0),
-      ),
       EditProfileScreen(
         repository: widget.profileRepository,
         onBack: () => setState(() => currentIndex = 0),
@@ -256,18 +249,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                                     currentIndex == index
                                         ? 'assets/icons/Budget (1).png'
                                         : 'assets/icons/Budget.png',
-                                  ),
-                                  size: 25,
-                                  color: currentIndex == index
-                                      ? const Color(0xFFFAAE36)
-                                      : const Color(0xFFD0D0D0),
-                                )
-                              else if (index == 3)
-                                ImageIcon(
-                                  AssetImage(
-                                    currentIndex == index
-                                        ? 'assets/icons/Payment History.png'
-                                        : 'assets/icons/Payment History (1).png',
                                   ),
                                   size: 25,
                                   color: currentIndex == index

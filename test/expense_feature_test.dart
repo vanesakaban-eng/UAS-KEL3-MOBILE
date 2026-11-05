@@ -5,7 +5,6 @@ import 'package:uku_app/data/uku_store.dart';
 import 'package:uku_app/features/expense/expense_screen.dart';
 import 'package:uku_app/features/expense/monthly_expense_screen.dart';
 import 'package:uku_app/features/expense/recap_screen.dart';
-import 'package:uku_app/features/expense/transactions_screen.dart';
 import 'package:uku_app/features/home/home_screen.dart';
 import 'package:uku_app/navigation/main_navigation.dart';
 
@@ -227,77 +226,6 @@ void main() {
     expect(didGoBack, isTrue);
   });
 
-  testWidgets('transactions screen shows stored expense details directly',
-      (tester) async {
-    tester.view.physicalSize = const Size(390, 844);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-
-    var didGoBack = false;
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: TransactionsScreen(
-            store: UkuStore(),
-            onBack: () => didGoBack = true,
-          ),
-        ),
-      ),
-    );
-
-    expect(find.text('Riwayat Transaksi'), findsOneWidget);
-    expect(find.text('Sabtu, 12 September 2026'), findsOneWidget);
-    expect(find.text('Detail Transaksi'), findsNothing);
-    expect(
-      find.descendant(
-        of: find.byType(ListView),
-        matching: find.text('Pakaian'),
-      ),
-      findsOneWidget,
-    );
-    expect(find.text('Metode: Cash'), findsOneWidget);
-    expect(find.text('- Rp 200.000'), findsOneWidget);
-    await tester.tap(find.byTooltip('Kembali'));
-    expect(didGoBack, isTrue);
-  });
-
-  testWidgets(
-      'transaction history uses category icons for expenses and savings',
-      (tester) async {
-    tester.view.physicalSize = const Size(390, 844);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-
-    final store = UkuStore();
-    store.addExpense(Expense(
-      category: 'Makanan & Minuman',
-      amount: 25000,
-      date: DateTime.now(),
-      location: '',
-      purpose: '',
-      method: 'Tunai',
-    ));
-    store.addSavingBalance(store.savings.first, 100000);
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(body: TransactionsScreen(store: store)),
-      ),
-    );
-
-    Finder findAsset(String path) => find.byWidgetPredicate((widget) {
-          if (widget is! Image) return false;
-          final image = widget.image;
-          return image is AssetImage && image.assetName == path;
-        });
-
-    expect(findAsset('assets/icons/Restaurant.png'), findsOneWidget);
-    expect(findAsset('assets/icons/Airplane Landing.png'), findsWidgets);
-    expect(findAsset('assets/icons/Clothes.png'), findsOneWidget);
-  });
-
   testWidgets('recap history includes expenses, income and saving activity',
       (tester) async {
     final store = UkuStore();
@@ -312,7 +240,76 @@ void main() {
     await tester.drag(find.byType(ListView).last, const Offset(0, -600));
     await tester.pumpAndSettle();
     expect(find.text('Jalan - jalan ke Bali'), findsOneWidget);
-    expect(find.text('3 aktivitas'), findsOneWidget);
+    expect(find.text('3 aktivitas'), findsNothing);
+    expect(find.byTooltip('Filter aktivitas'), findsOneWidget);
+  });
+
+  testWidgets('recap history filters activities by type and category',
+      (tester) async {
+    final store = UkuStore();
+
+    await tester.pumpWidget(
+      MaterialApp(home: Scaffold(body: RecapScreen(store: store))),
+    );
+
+    final filterButton = find.byTooltip('Filter aktivitas');
+    await tester.ensureVisible(filterButton);
+    await tester.tap(filterButton);
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(ChoiceChip, 'Pemasukan'), findsNothing);
+    expect(find.text('Jenis tabungan/pengeluaran'), findsOneWidget);
+    expect(find.widgetWithText(ChoiceChip, 'Pakaian'), findsOneWidget);
+    final tabunganLeft = tester.getTopLeft(find.text('Jenis transaksi')).dx;
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Pengeluaran'));
+    await tester.pumpAndSettle();
+    expect(find.text('Jenis tabungan/pengeluaran'), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text('Jenis transaksi')).dx,
+      tabunganLeft,
+    );
+    await tester.tap(find.text('Terapkan'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Pakaian'), findsOneWidget);
+    expect(find.text('Pemasukan bulanan'), findsNothing);
+    expect(find.text('Jalan - jalan ke Bali'), findsNothing);
+
+    await tester.ensureVisible(find.byTooltip('Filter aktivitas'));
+    await tester.tap(find.byTooltip('Filter aktivitas'));
+    await tester.pumpAndSettle();
+    final pakaianFilter = find.widgetWithText(ChoiceChip, 'Pakaian').last;
+    await tester.ensureVisible(pakaianFilter);
+    await tester.tap(pakaianFilter);
+    await tester.tap(find.text('Terapkan'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Pakaian'), findsOneWidget);
+    expect(find.text('Tidak ada aktivitas sesuai filter'), findsNothing);
+  });
+
+  testWidgets('a category without a type filters all matching activities',
+      (tester) async {
+    final store = UkuStore();
+
+    await tester.pumpWidget(
+      MaterialApp(home: Scaffold(body: RecapScreen(store: store))),
+    );
+
+    final filterButton = find.byTooltip('Filter aktivitas');
+    await tester.ensureVisible(filterButton);
+    await tester.tap(filterButton);
+    await tester.pumpAndSettle();
+    final liburanFilter = find.widgetWithText(ChoiceChip, 'Liburan');
+    expect(liburanFilter, findsOneWidget);
+    await tester.ensureVisible(liburanFilter);
+    await tester.tap(liburanFilter);
+    await tester.pumpAndSettle();
+    expect(tester.widget<ChoiceChip>(liburanFilter).selected, isTrue);
+    await tester.tap(find.text('Terapkan'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Jalan - jalan ke Bali'), findsOneWidget);
+    expect(find.text('Pakaian'), findsNothing);
   });
 
   testWidgets('recap shows history for the current selected month',
@@ -363,7 +360,7 @@ void main() {
     expect(find.text('Beranda'), findsOneWidget);
     expect(find.text('Pengeluaran'), findsOneWidget);
     expect(find.text('Budget'), findsOneWidget);
-    expect(find.text('Transaksi'), findsOneWidget);
+    expect(find.text('Transaksi'), findsNothing);
 
     await tester.tap(find.byTooltip('Kembali'));
     await tester.pumpAndSettle();
@@ -422,7 +419,7 @@ void main() {
 
     expect(find.text('Grafik Keuangan'), findsOneWidget);
     expect(find.text('Kondisi keuangan saat ini'), findsOneWidget);
-    final detailsButton = find.text('Klik Untuk Detail Transaksi');
+    final detailsButton = find.text('Lihat Detail Pengeluaran');
     await tester.ensureVisible(detailsButton);
     await tester.tap(detailsButton);
     await tester.pumpAndSettle();
@@ -514,28 +511,6 @@ void main() {
     expect(chart.data.barGroups[1].barRods.single.toY, 75000);
   });
 
-  testWidgets('home transaction card opens the Transactions navigation page',
-      (tester) async {
-    await tester.pumpWidget(
-      const MaterialApp(home: MainNavigationScreen()),
-    );
-
-    final pakaianExpense = find.text('Pakaian');
-    await tester.ensureVisible(pakaianExpense);
-    await tester.tap(pakaianExpense);
-    await tester.pumpAndSettle();
-
-    expect(find.text('Riwayat Transaksi'), findsOneWidget);
-    expect(find.text('Metode: Cash'), findsOneWidget);
-    expect(find.text('Beranda'), findsOneWidget);
-    expect(find.text('Pengeluaran'), findsOneWidget);
-    expect(find.text('Budget'), findsOneWidget);
-    expect(find.text('Transaksi'), findsOneWidget);
-    await tester.tap(find.byTooltip('Kembali'));
-    await tester.pumpAndSettle();
-    expect(find.text('Halo, User'), findsOneWidget);
-  });
-
   testWidgets('home saving target detail keeps the main navigation visible',
       (tester) async {
     tester.view.physicalSize = const Size(390, 844);
@@ -557,22 +532,23 @@ void main() {
     expect(find.text('Beranda'), findsOneWidget);
     expect(find.text('Pengeluaran'), findsOneWidget);
     expect(find.text('Budget'), findsOneWidget);
-    expect(find.text('Transaksi'), findsOneWidget);
+    expect(find.text('Transaksi'), findsNothing);
     await tester.tap(find.widgetWithText(ElevatedButton, 'Ke Beranda'));
     await tester.pumpAndSettle();
     expect(find.text('Halo, User'), findsOneWidget);
     expect(find.text('Detail Tabungan'), findsNothing);
   });
 
-  testWidgets('newly recorded expense appears with the seeded history',
+  testWidgets('home keeps the latest transaction preview without history tab',
       (tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
+    final store = UkuStore();
     await tester.pumpWidget(
-      const MaterialApp(home: MainNavigationScreen()),
+      MaterialApp(home: MainNavigationScreen(store: store)),
     );
 
     await tester.tap(find.text('Catat Pengeluaran'));
@@ -587,25 +563,13 @@ void main() {
     await tester.tap(find.text('Simpan'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Transaksi').last);
+    expect(
+        store.expenses.any((expense) => expense.category == 'Belanja'), isTrue);
+    await tester.tap(find.text('Beranda').last);
     await tester.pumpAndSettle();
-    expect(find.text('Metode: Cash'), findsWidgets);
-    expect(
-      find.descendant(
-        of: find.byType(ListView),
-        matching: find.text('Pakaian'),
-      ),
-      findsOneWidget,
-    );
-    expect(
-      find.descendant(
-        of: find.byType(ListView),
-        matching: find.text('Belanja'),
-      ),
-      findsOneWidget,
-    );
-    expect(find.text('- Rp 200.000'), findsOneWidget);
+    expect(find.text('Transaksi'), findsOneWidget);
+    expect(find.text('Belanja'), findsOneWidget);
     expect(find.text('- Rp 25.000'), findsOneWidget);
-    expect(find.text('Detail Transaksi'), findsNothing);
+    expect(find.text('Riwayat Transaksi'), findsNothing);
   });
 }

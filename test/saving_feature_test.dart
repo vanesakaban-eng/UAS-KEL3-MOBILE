@@ -51,11 +51,33 @@ void main() {
     await tester.ensureVisible(find.text('Tambah saldo'));
     await tester.tap(find.text('Tambah saldo'));
     await tester.pumpAndSettle();
+    final addBalanceDialog = tester.widget<AlertDialog>(
+      find.byType(AlertDialog),
+    );
+    expect(addBalanceDialog.backgroundColor, Colors.white);
+    expect(addBalanceDialog.surfaceTintColor, Colors.white);
+    expect(
+      tester
+          .widget<ElevatedButton>(find.widgetWithText(ElevatedButton, 'Tambah'))
+          .style
+          ?.backgroundColor
+          ?.resolve({}),
+      const Color(0xFFFFAD2F),
+    );
+    expect(
+      tester
+          .widget<TextButton>(find.widgetWithText(TextButton, 'Batal'))
+          .style
+          ?.foregroundColor
+          ?.resolve({}),
+      const Color(0xFFFFAD2F),
+    );
     await tester.enterText(find.byType(TextField), '500000');
     await tester.tap(find.widgetWithText(ElevatedButton, 'Tambah'));
     await tester.pumpAndSettle();
 
     expect(store.savings.first.current, 1500000);
+    expect(store.income, 1500000);
     expect(find.text('Rp 1.500.000'), findsOneWidget);
     expect(
       store.activities.any((activity) =>
@@ -213,14 +235,13 @@ void main() {
     expect(find.text('Detail Tabungan'), findsOneWidget);
   });
 
-  testWidgets('opens Budget when tapping the remaining budget box',
+  testWidgets('shows remaining budget as a non-interactive value',
       (tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    var openedBudget = false;
     final store = UkuStore();
     await tester.pumpWidget(
       MaterialApp(
@@ -228,14 +249,27 @@ void main() {
           body: HomeScreenContent(
             store: store,
             onExpense: () {},
-            onBudget: () => openedBudget = true,
           ),
         ),
       ),
     );
-    await tester.tap(find.text(rupiah(store.remainingBudget)));
-
-    expect(openedBudget, isTrue);
+    final budgetLabel = find.text('Sisa Budget');
+    expect(budgetLabel, findsOneWidget);
+    expect(
+      find.ancestor(
+        of: budgetLabel,
+        matching: find.byWidgetPredicate(
+          (widget) => widget is AbsorbPointer && widget.absorbing,
+        ),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.ancestor(of: budgetLabel, matching: find.byType(InkWell)),
+      findsNothing,
+    );
+    await tester.tap(budgetLabel, warnIfMissed: false);
+    expect(find.text('Sisa Budget'), findsOneWidget);
   });
 
   testWidgets('opens the monthly budget editor and saves the budget',
@@ -249,32 +283,24 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(home: Scaffold(body: BudgetScreen(store: store))),
     );
-    expect(find.text('Buat Budget'), findsOneWidget);
-    expect(find.text('Klik untuk edit budget bulanan'), findsOneWidget);
-    expect(tester.widget<TextField>(find.byType(TextField)).enabled, isFalse);
-    expect(
-      tester
-          .widget<ElevatedButton>(
-            find.widgetWithText(ElevatedButton, 'Selesai'),
-          )
-          .onPressed,
-      isNull,
-    );
-    await tester.tap(find.text('Budget bulan ini'));
-    await tester.pumpAndSettle();
+    expect(find.text('Budget bulan ini'), findsOneWidget);
+    expect(find.text('Buat Budget'), findsNothing);
     expect(find.text('Edit Budget Bulan Ini'), findsOneWidget);
+    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,
+        '1.500.000');
     await tester.enterText(find.byType(TextField), '2000000');
     await tester.tap(find.widgetWithText(ElevatedButton, 'Selesai'));
     await tester.pumpAndSettle();
 
     expect(store.budget, 2000000);
-    expect(find.text('2.000.000'), findsOneWidget);
-    expect(find.text('Edit Budget Bulan Ini'), findsNothing);
-    expect(find.text('Buat Budget'), findsOneWidget);
-    expect(tester.widget<TextField>(find.byType(TextField)).enabled, isFalse);
+    expect(find.text(rupiah(store.budget).replaceFirst('Rp ', '')),
+        findsOneWidget);
+    expect(find.text('Edit Budget Bulan Ini'), findsOneWidget);
+    expect(find.byType(TextField), findsOneWidget);
+    expect(find.text('Buat Budget'), findsNothing);
   });
 
-  testWidgets('allows creating a budget after the month changes',
+  testWidgets('sets the monthly budget through the same edit action',
       (tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
@@ -286,18 +312,22 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(home: Scaffold(body: BudgetScreen(store: store))),
     );
-    expect(find.text('Buat Budget bulan ini'), findsOneWidget);
-    expect(find.text('Klik untuk edit budget bulanan'), findsNothing);
-    expect(find.text('Buat Budget'), findsOneWidget);
-    expect(tester.widget<TextField>(find.byType(TextField)).enabled, isTrue);
-    await tester.tap(find.text('Buat Budget bulan ini'));
-    await tester.pumpAndSettle();
-    expect(find.text('Buat Budget Bulan Ini'), findsOneWidget);
-    expect(find.text('Edit Budget Bulan Ini'), findsNothing);
+    expect(find.text('0'), findsOneWidget);
+    expect(find.text('Buat Budget'), findsNothing);
+    expect(find.text('Edit Budget Bulan Ini'), findsOneWidget);
     expect(
       tester.widget<TextField>(find.byType(TextField)).controller!.text,
       isEmpty,
     );
     expect(store.remainingBudget, 0);
+    await tester.enterText(find.byType(TextField), '2500000');
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Selesai'));
+    await tester.pumpAndSettle();
+
+    expect(store.hasBudgetForMonth(DateTime.now()), isTrue);
+    expect(store.budget, 2500000);
+    expect(find.text(rupiah(store.budget).replaceFirst('Rp ', '')),
+        findsOneWidget);
+    expect(find.text('Buat Budget'), findsNothing);
   });
 }

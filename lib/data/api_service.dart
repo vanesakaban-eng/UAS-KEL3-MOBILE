@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-/// Service untuk menghubungkan Flutter Frontend UKu dengan Backend API di D:\UKU_APP\BE
+/// Service untuk menghubungkan Flutter Frontend UKu dengan Backend API di folder backend UKu
 class UkuApiService {
   UkuApiService._();
   static final UkuApiService instance = UkuApiService._();
@@ -9,8 +9,8 @@ class UkuApiService {
   /// URL dasar Backend:
   /// - Windows Desktop: http://localhost:5000/api
   /// - Android Emulator: http://10.0.2.2:5000/api
-  /// - HP Fisik: http://<IP_KOMPUTER>:5000/api (misal: http://192.168.1.10:5000/api)
-  static String baseUrl = 'http://localhost:5000/api';
+  /// - HP Fisik: http://IP_KOMPUTER:5000/api (misal: http://192.168.1.10:5000/api)
+  static String baseUrl = 'http://localhost:5001/api';
 
   String? _token;
 

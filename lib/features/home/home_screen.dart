@@ -12,6 +12,7 @@ class HomeScreenContent extends StatelessWidget {
     super.key,
     required this.store,
     required this.onExpense,
+    this.userName = 'User',
     this.onExpenseCategory,
     this.onBudget,
     this.onRecap,
@@ -22,6 +23,7 @@ class HomeScreenContent extends StatelessWidget {
   });
 
   final UkuStore store;
+  final String userName;
   final VoidCallback onExpense;
   final ValueChanged<String>? onExpenseCategory;
   final VoidCallback? onBudget;
@@ -72,19 +74,19 @@ class HomeScreenContent extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Column(
+                          Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Halo, Sobat UKu 👋',
-                                style: TextStyle(
+                                'Halo, $userName 👋',
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              SizedBox(height: 2),
-                              Text(
+                              const SizedBox(height: 2),
+                              const Text(
                                 'Kelola keuangan harianmu dengan bijak',
                                 style: TextStyle(
                                   color: Colors.white70,
@@ -192,7 +194,6 @@ class HomeScreenContent extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 10),
-                      // Jatah Belanja Aman Harian (Daily Hook)
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 12,
@@ -241,7 +242,7 @@ class HomeScreenContent extends StatelessWidget {
                             'Pemasukkan',
                             rupiah(store.income),
                             Icons.arrow_downward_rounded,
-                            const Color(0xFFE8F5E9),
+                            const Color(0xFFEAF7EE),
                             const Color(0xFF2E7D32),
                           ),
                         ],

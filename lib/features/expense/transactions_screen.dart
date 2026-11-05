@@ -18,7 +18,209 @@ class TransactionsScreen extends StatefulWidget {
 class _TransactionsScreenState extends State<TransactionsScreen> {
   ActivityType? _selectedType;
   String? _selectedCategory;
-  bool _showFilters = false;
+
+  Future<void> _openFilters() async {
+    var draftType = _selectedType;
+    var draftCategory = _selectedCategory;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          final categories = switch (draftType) {
+            ActivityType.expense => categoryIcons.keys.toList()..sort(),
+            ActivityType.saving =>
+              SavingCategory.all.map((category) => category.name).toList(),
+            _ => <String>[],
+          };
+          final selectedCategory =
+              categories.contains(draftCategory) ? draftCategory : null;
+          final sheetHeight = MediaQuery.sizeOf(context).height * 0.78;
+
+          return SafeArea(
+            top: false,
+            child: Container(
+              height: sheetHeight,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: Column(
+                children: [
+                  SizedBox(
+                    width: double.infinity,
+                    height: 62,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        const Text(
+                          'Pilih Filter',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Positioned(
+                          right: 8,
+                          child: IconButton(
+                            tooltip: 'Tutup filter',
+                            onPressed: () => Navigator.pop(sheetContext),
+                            icon:
+                                const Icon(Icons.close, color: Colors.black54),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1, color: Color(0xFFEFEFEF)),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Jenis transaksi',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              _buildFilterChip(
+                                'Tabungan',
+                                draftType == ActivityType.saving,
+                                () => setSheetState(() {
+                                  draftType = draftType == ActivityType.saving
+                                      ? null
+                                      : ActivityType.saving;
+                                  draftCategory = null;
+                                }),
+                                selectedColor: const Color(0xFFFF8800),
+                                selectedLabelColor: Colors.white,
+                              ),
+                              _buildFilterChip(
+                                'Pengeluaran',
+                                draftType == ActivityType.expense,
+                                () => setSheetState(() {
+                                  draftType = draftType == ActivityType.expense
+                                      ? null
+                                      : ActivityType.expense;
+                                  draftCategory = null;
+                                }),
+                                selectedColor: const Color(0xFFFF8800),
+                                selectedLabelColor: Colors.white,
+                              ),
+                              _buildFilterChip(
+                                'Pemasukan',
+                                draftType == ActivityType.income,
+                                () => setSheetState(() {
+                                  draftType = draftType == ActivityType.income
+                                      ? null
+                                      : ActivityType.income;
+                                  draftCategory = null;
+                                }),
+                                selectedColor: const Color(0xFFFF8800),
+                                selectedLabelColor: Colors.white,
+                              ),
+                            ],
+                          ),
+                          if (categories.isNotEmpty) ...[
+                            const SizedBox(height: 28),
+                            Text(
+                              draftType == ActivityType.saving
+                                  ? 'Jenis tabungan'
+                                  : 'Jenis pengeluaran',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                _buildFilterChip(
+                                  'Semua',
+                                  selectedCategory == null,
+                                  () =>
+                                      setSheetState(() => draftCategory = null),
+                                ),
+                                for (final category in categories)
+                                  _buildFilterChip(
+                                    category,
+                                    selectedCategory == category,
+                                    () => setSheetState(
+                                        () => draftCategory = category),
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                  const Divider(height: 1, color: Color(0xFFEFEFEF)),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => setSheetState(() {
+                              draftType = null;
+                              draftCategory = null;
+                            }),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFFFFAD2F),
+                              side: const BorderSide(color: Color(0xFFFFAD2F)),
+                              minimumSize: const Size.fromHeight(48),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text('Atur Ulang'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              setState(() {
+                                _selectedType = draftType;
+                                _selectedCategory = draftCategory;
+                              });
+                              Navigator.pop(sheetContext);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFFFAD2F),
+                              foregroundColor: Colors.white,
+                              minimumSize: const Size.fromHeight(48),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text('Terapkan'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,9 +234,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             SavingCategory.all.map((category) => category.name).toList(),
           _ => <String>[],
         };
-        final selectedCategory = categories.contains(_selectedCategory)
-            ? _selectedCategory
-            : null;
+        final selectedCategory =
+            categories.contains(_selectedCategory) ? _selectedCategory : null;
         final activities = allActivities.where((activity) {
           return (_selectedType == null || activity.type == _selectedType) &&
               (selectedCategory == null ||
@@ -80,8 +281,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                           ),
                           IconButton(
                             tooltip: 'Filter transaksi',
-                            onPressed: () =>
-                                setState(() => _showFilters = !_showFilters),
+                            onPressed: _openFilters,
                             icon: Image.asset(
                               'assets/icons/Group 74.png',
                               width: 36,
@@ -94,64 +294,6 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                   ],
                 ),
               ),
-              if (_showFilters)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Jenis transaksi',
-                        style: TextStyle(
-                          color: Colors.black54,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: [
-                            _buildTypeFilter('Tabungan', ActivityType.saving),
-                            _buildTypeFilter(
-                                'Pengeluaran', ActivityType.expense),
-                            _buildTypeFilter('Pemasukan', ActivityType.income),
-                          ],
-                        ),
-                      ),
-                      if (categories.isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          _selectedType == ActivityType.saving
-                              ? 'Jenis tabungan'
-                              : 'Jenis pengeluaran',
-                          style: const TextStyle(
-                            color: Colors.black54,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: [
-                              _buildCategoryFilter('Semua', null,
-                                  selectedCategory),
-                              for (final category in categories)
-                                _buildCategoryFilter(
-                                  category,
-                                  category,
-                                  selectedCategory,
-                                ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
               Expanded(
                 child: allActivities.isEmpty
                     ? const Center(
@@ -201,44 +343,27 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     );
   }
 
-  Widget _buildTypeFilter(String label, ActivityType type) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: ChoiceChip(
-        label: Text(label),
-        selected: _selectedType == type,
-        selectedColor: const Color(0xFFFFDFAE),
-        side: BorderSide(
-          color: _selectedType == type
-              ? const Color(0xFFFAAE36)
-              : Colors.black12,
-        ),
-        onSelected: (_) => setState(() {
-          _selectedType = _selectedType == type ? null : type;
-          _selectedCategory = null;
-        }),
-      ),
-    );
-  }
-
-  Widget _buildCategoryFilter(
+  Widget _buildFilterChip(
     String label,
-    String? category,
-    String? selectedCategory,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: ChoiceChip(
-        label: Text(label),
-        selected: selectedCategory == category,
-        selectedColor: const Color(0xFFFFDFAE),
-        side: BorderSide(
-          color: selectedCategory == category
-              ? const Color(0xFFFAAE36)
-              : Colors.black12,
-        ),
-        onSelected: (_) => setState(() => _selectedCategory = category),
+    bool selected,
+    VoidCallback onTap, {
+    Color selectedColor = const Color(0xFFFFAD2F),
+    Color selectedLabelColor = const Color.fromARGB(255, 255, 255, 255),
+  }) {
+    return ChoiceChip(
+      label: Text(label),
+      selected: selected,
+      selectedColor: selectedColor,
+      backgroundColor: const Color(0xFFF4F4F4),
+      side: BorderSide(
+        color: selected ? selectedColor : Colors.transparent,
       ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      labelStyle: TextStyle(
+        color: selected ? selectedLabelColor : Colors.black87,
+        fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+      ),
+      onSelected: (_) => onTap(),
     );
   }
 }

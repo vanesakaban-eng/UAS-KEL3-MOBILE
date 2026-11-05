@@ -202,7 +202,7 @@ class _AiScreenState extends State<AiScreen> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          Container(
+                          SizedBox(
                             width: 38,
                             height: 38,
                             child: Image.asset(

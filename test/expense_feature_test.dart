@@ -101,7 +101,8 @@ void main() {
     await tester.tap(find.text('Foto Bill'));
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(InkWell, 'Belanja'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 350));
 
     expect(find.text('Catat Pengeluaran foto bill'), findsOneWidget);
     expect(find.byTooltip('Pilih foto dari galeri'), findsOneWidget);
@@ -383,6 +384,28 @@ void main() {
     expect(find.text('2026'), findsOneWidget);
     expect(find.byType(CalendarDatePicker), findsNothing);
     expect(find.text('Oktober'), findsOneWidget);
+    final monthPickerDialog = tester.widget<AlertDialog>(
+      find.ancestor(
+        of: find.text('Pilih Bulan & Tahun').last,
+        matching: find.byType(AlertDialog),
+      ),
+    );
+    expect(monthPickerDialog.backgroundColor, Colors.white);
+    expect(monthPickerDialog.surfaceTintColor, Colors.white);
+    expect(
+      Theme.of(tester.element(find.text('Batal'))).colorScheme.primary,
+      const Color(0xFFFFAD2F),
+    );
+    expect(
+      tester
+          .widget<OutlinedButton>(
+            find.widgetWithText(OutlinedButton, 'Oktober'),
+          )
+          .style
+          ?.side
+          ?.resolve({})!.color,
+      const Color(0xFFFFAD2F),
+    );
 
     await tester.tap(find.widgetWithText(OutlinedButton, 'Oktober'));
     await tester.pumpAndSettle();
@@ -535,6 +558,10 @@ void main() {
     expect(find.text('Pengeluaran'), findsOneWidget);
     expect(find.text('Budget'), findsOneWidget);
     expect(find.text('Transaksi'), findsOneWidget);
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Ke Beranda'));
+    await tester.pumpAndSettle();
+    expect(find.text('Halo, User'), findsOneWidget);
+    expect(find.text('Detail Tabungan'), findsNothing);
   });
 
   testWidgets('newly recorded expense appears with the seeded history',

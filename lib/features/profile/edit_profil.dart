@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:uku_app/data/profile_settings_repository.dart';
 import 'package:uku_app/features/auth/login_screen.dart';
+import 'package:uku_app/features/profile/change_password_screen.dart';
 import 'package:uku_app/widgets/app_back_button.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -21,13 +22,11 @@ class EditProfileScreen extends StatefulWidget {
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
   static const _orange = Color(0xFFFF9200);
-  bool _showPassword = false;
   late final ProfileSettingsRepository _repository =
       widget.repository ?? LocalProfileSettingsRepository();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _usernameController = TextEditingController();
-  final _passwordController = TextEditingController();
   final _phoneNumberController = TextEditingController();
 
   @override
@@ -41,7 +40,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _nameController.dispose();
     _emailController.dispose();
     _usernameController.dispose();
-    _passwordController.dispose();
     _phoneNumberController.dispose();
     super.dispose();
   }
@@ -49,12 +47,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Future<void> _loadProfile() async {
     try {
       final profile = await _repository.load();
-      final password = await _repository.loadPassword();
       if (!mounted) return;
       _nameController.text = profile.name;
       _emailController.text = profile.email;
       _usernameController.text = profile.username;
-      _passwordController.text = password ?? '';
       _phoneNumberController.text = profile.phoneNumber;
     } on Exception {
       if (mounted) _showStorageError();
@@ -70,9 +66,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           username: _usernameController.text.trim(),
           phoneNumber: _phoneNumberController.text.trim(),
         ),
-        password: _passwordController.text.isEmpty
-            ? null
-            : _passwordController.text,
       );
       if (!mounted) return;
       if (widget.onSaved != null) {
@@ -93,14 +86,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
+  Future<void> _changePassword() async {
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ChangePasswordScreen(repository: _repository),
+      ),
+    );
+  }
+
   Widget _buildInputGroup(
     String label, {
     required TextEditingController controller,
-    bool isPassword = false,
     TextInputType? keyboardType,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -117,7 +118,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             height: 34,
             child: TextFormField(
               controller: controller,
-              obscureText: isPassword && !_showPassword,
               keyboardType: keyboardType,
               style: const TextStyle(fontSize: 11),
               decoration: InputDecoration(
@@ -130,27 +130,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   horizontal: 12,
                   vertical: 8,
                 ),
-                suffixIcon: isPassword
-                    ? IconButton(
-                        tooltip: _showPassword
-                            ? 'Sembunyikan password'
-                            : 'Tampilkan password',
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(
-                          minWidth: 36,
-                          minHeight: 34,
-                        ),
-                        onPressed: () =>
-                            setState(() => _showPassword = !_showPassword),
-                        icon: Icon(
-                          _showPassword
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined,
-                          size: 17,
-                          color: _orange,
-                        ),
-                      )
-                    : null,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(7),
                   borderSide: const BorderSide(color: Colors.black26),
@@ -191,122 +170,150 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  SizedBox(
-                    height: 100,
-                    child: Stack(
-                      children: [
-                        Positioned(
-                          left: 0,
-                          top: 12,
-                          child: Transform.translate(
-                            offset: const Offset(-20, 0),
-                            child: AppBackButton(
-                              onPressed: widget.onBack ??
-                                  () => Navigator.pop(context),
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          right: 0,
-                          top: 12,
-                          child: IconButton(
-                            tooltip: 'Simpan profil',
-                            onPressed: _saveProfile,
-                            icon: const Icon(
-                              Icons.check,
-                              color: _orange,
-                              size: 20,
-                            ),
-                          ),
-                        ),
-                        const Align(
-                          alignment: Alignment.topCenter,
-                          child: Padding(
-                            padding: EdgeInsets.only(top: 58),
-                            child: Text(
-                              'Edit Profil',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(28, 0, 28, 28),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: 420,
+                  minHeight: constraints.maxHeight,
+                ),
+                child: IntrinsicHeight(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      SizedBox(
+                        height: 90,
+                        child: Stack(
+                          children: [
+                            Positioned(
+                              left: 0,
+                              top: 12,
+                              child: Transform.translate(
+                                offset: const Offset(-20, 0),
+                                child: AppBackButton(
+                                  onPressed: widget.onBack ??
+                                      () => Navigator.pop(context),
+                                ),
                               ),
                             ),
-                          ),
+                            Positioned(
+                              right: 0,
+                              top: 12,
+                              child: IconButton(
+                                tooltip: 'Simpan profil',
+                                onPressed: _saveProfile,
+                                icon: const Icon(
+                                  Icons.check,
+                                  color: _orange,
+                                  size: 20,
+                                ),
+                              ),
+                            ),
+                            const Align(
+                              alignment: Alignment.topCenter,
+                              child: Padding(
+                                padding: EdgeInsets.only(top: 58),
+                                child: Text(
+                                  'Edit Profil',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Center(
-                    child: Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x26000000),
-                            blurRadius: 8,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
                       ),
-                      child: const Icon(
-                        Icons.person,
-                        color: _orange,
-                        size: 40,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  _buildInputGroup('Nama', controller: _nameController),
-                  _buildInputGroup('Email', controller: _emailController,
-                      keyboardType: TextInputType.emailAddress),
-                  _buildInputGroup('Username',
-                      controller: _usernameController),
-                  _buildInputGroup('Password',
-                      controller: _passwordController, isPassword: true),
-                  _buildInputGroup(
-                    'Nomor Telepon',
-                    controller: _phoneNumberController,
-                    keyboardType: TextInputType.phone,
-                  ),
-                  const SizedBox(height: 2),
-                  Center(
-                    child: SizedBox(
-                      height: 34,
-                      child: ElevatedButton.icon(
-                        onPressed: _logout,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _orange,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(9),
+                      const SizedBox(height: 12),
+                      Center(
+                        child: Container(
+                          width: 86,
+                          height: 86,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Color(0x26000000),
+                                blurRadius: 8,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
                           ),
-                          elevation: 2,
-                        ),
-                        icon: const Icon(Icons.logout, size: 14),
-                        label: const Text(
-                          'LOGOUT',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
+                          child: const Icon(
+                            Icons.person,
+                            color: _orange,
+                            size: 48,
                           ),
                         ),
                       ),
-                    ),
+                      const SizedBox(height: 20),
+                      _buildInputGroup('Nama', controller: _nameController),
+                      _buildInputGroup(
+                        'Email',
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                      ),
+                      _buildInputGroup(
+                        'Username',
+                        controller: _usernameController,
+                      ),
+                      _buildInputGroup(
+                        'Nomor Telepon',
+                        controller: _phoneNumberController,
+                        keyboardType: TextInputType.phone,
+                      ),
+                      SizedBox(
+                        height: 44,
+                        child: ElevatedButton.icon(
+                          onPressed: _changePassword,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFFAAE36),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            elevation: 3,
+                          ),
+                          icon: const Icon(Icons.lock, size: 20),
+                          label: const Text(
+                            'Ubah Kata Sandi',
+                            style: TextStyle(fontSize: 14),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      const Spacer(),
+                      Center(
+                        child: SizedBox(
+                          height: 36,
+                          child: ElevatedButton.icon(
+                            onPressed: _logout,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFFAAE36),
+                              foregroundColor: Colors.white,
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              elevation: 3,
+                            ),
+                            icon: const Icon(Icons.logout, size: 18),
+                            label: const Text(
+                              'LOGOUT',
+                              style: TextStyle(fontSize: 14),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ),

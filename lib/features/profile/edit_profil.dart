@@ -172,7 +172,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) => SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(28, 0, 28, 28),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: Center(
               child: ConstrainedBox(
                 constraints: BoxConstraints(
@@ -266,25 +266,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         'Nomor Telepon',
                         controller: _phoneNumberController,
                         keyboardType: TextInputType.phone,
-                      ),
-                      SizedBox(
-                        height: 44,
-                        child: ElevatedButton.icon(
-                          onPressed: _changePassword,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFFAAE36),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            elevation: 3,
-                          ),
-                          icon: const Icon(Icons.lock, size: 20),
-                          label: const Text(
-                            'Ubah Kata Sandi',
-                            style: TextStyle(fontSize: 14),
-                          ),
-                        ),
                       ),
                       const SizedBox(height: 20),
                       const Spacer(),

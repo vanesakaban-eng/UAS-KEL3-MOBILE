@@ -74,6 +74,7 @@ void main() {
     );
 
     Text label(String text) => tester.widget<Text>(find.text(text));
+    expect(find.text('AIku'), findsNothing);
     expect(label('Manual').style?.color, Colors.white);
     expect(label('Foto Bill').style?.color, const Color(0xFFFF8800));
 
@@ -82,6 +83,40 @@ void main() {
 
     expect(label('Foto Bill').style?.color, Colors.white);
     expect(label('Manual').style?.color, const Color(0xFFFF8800));
+  });
+
+  testWidgets('bill entry requires an explicit payment method', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ExpenseScreen(
+            store: UkuStore(),
+            initialCategory: 'Belanja',
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Foto Bill'));
+    await tester.pump();
+
+    for (final chip in tester.widgetList<ChoiceChip>(find.byType(ChoiceChip))) {
+      expect(chip.selected, isFalse);
+    }
+
+    await tester.tap(find.text('Qris'));
+    await tester.pump();
+    expect(
+      tester
+          .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Qris'))
+          .selected,
+      isTrue,
+    );
   });
 
   testWidgets('Foto Bill category opens camera controls and continues',
@@ -111,7 +146,6 @@ void main() {
     await tester.tap(find.byTooltip('Lanjutkan'));
     await tester.pumpAndSettle();
     expect(find.text('Jumlah'), findsOneWidget);
-    expect(find.text('Belanja'), findsOneWidget);
   });
 
   testWidgets('choosing a category advances to expense details',

@@ -1,7 +1,5 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:uku_app/data/uku_store.dart';
-import 'package:uku_app/features/ai/ai_screen.dart';
 import 'package:uku_app/features/expense/recap_screen.dart';
 import 'package:uku_app/features/savings/saving_detail_screen.dart';
 import 'package:uku_app/features/savings/saving_screen.dart';
@@ -13,7 +11,6 @@ class HomeScreenContent extends StatelessWidget {
     required this.onExpense,
     this.userName = 'User',
     this.onExpenseCategory,
-    this.onBudget,
     this.onRecap,
     this.onSaving,
     this.onSavingTarget,
@@ -24,7 +21,6 @@ class HomeScreenContent extends StatelessWidget {
   final String userName;
   final VoidCallback onExpense;
   final ValueChanged<String>? onExpenseCategory;
-  final VoidCallback? onBudget;
   final VoidCallback? onRecap;
   final VoidCallback? onSaving;
   final ValueChanged<Saving>? onSavingTarget;
@@ -40,13 +36,13 @@ class HomeScreenContent extends StatelessWidget {
         final featuredSaving = store.latestSaving;
 
         final now = DateTime.now();
-        final totalDaysInMonth = DateUtils.getDaysInMonth(now.year, now.month);
-        final daysRemaining = (totalDaysInMonth - now.day + 1).clamp(1, 31);
-        final dailySafeToSpend = store.remainingBudget > 0
-            ? (store.remainingBudget / daysRemaining)
-            : 0.0;
-        final spentPercentage = store.budget > 0
-            ? (store.totalExpense / store.budget * 100).clamp(0, 999).toDouble()
+        final currentMonthExpense = store
+            .expensesForMonth(now)
+            .fold<double>(0, (total, expense) => total + expense.amount);
+        final spentPercentage = store.hasBudgetForMonth(now) && store.budget > 0
+            ? (currentMonthExpense / store.budget * 100)
+                .clamp(0, 999)
+                .toDouble()
             : 0.0;
 
         return SafeArea(
@@ -155,7 +151,7 @@ class HomeScreenContent extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       InkWell(
-                        onTap: onBudget,
+                        onTap: null,
                         borderRadius: BorderRadius.circular(12),
                         child: Container(
                           padding: const EdgeInsets.symmetric(
@@ -186,69 +182,9 @@ class HomeScreenContent extends StatelessWidget {
                                       : const Color(0xFF212121),
                                 ),
                               ),
-                              const SizedBox(width: 8),
-                              const Icon(
-                                Icons.edit_note_rounded,
-                                size: 18,
-                                color: Color(0xFFFAAE36),
-                              ),
                             ],
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 10),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.insights_rounded,
-                              size: 14,
-                              color: Colors.white,
-                            ),
-                            const SizedBox(width: 6),
-                            Flexible(
-                              child: Text(
-                                store.isOverBudget
-                                    ? 'Pengeluaran telah melebihi target anggaran!'
-                                    : 'Jatah belanja aman: ${rupiah(dailySafeToSpend)} / hari (sisa $daysRemaining hari)',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      Row(
-                        children: [
-                          _buildInfoBox(
-                            'Pengeluaran',
-                            rupiah(store.totalExpense),
-                            Icons.arrow_upward_rounded,
-                            const Color(0xFFFFEAEA),
-                            const Color(0xFFD32F2F),
-                          ),
-                          const SizedBox(width: 10),
-                          _buildInfoBox(
-                            'Pemasukkan',
-                            rupiah(store.income),
-                            Icons.arrow_downward_rounded,
-                            const Color(0xFFEAF7EE),
-                            const Color(0xFF2E7D32),
-                          ),
-                        ],
                       ),
                     ],
                   ),
@@ -270,9 +206,9 @@ class HomeScreenContent extends StatelessWidget {
                         children: [
                           Expanded(
                             child: _buildActionCard(
-                              'assets/icons/PaymentHistory.png',
+                              'assets/icons/Spiral Bound Booklet.png',
                               'Rekap Aktivitas',
-                              'Grafik & Analisis',
+                              'Lihat riwayat aktivitas',
                               onTap: onRecap ??
                                   () => Navigator.push(
                                         context,
@@ -287,7 +223,7 @@ class HomeScreenContent extends StatelessWidget {
                           const SizedBox(width: 12),
                           Expanded(
                             child: _buildActionCard(
-                              'assets/icons/LoveforMoney.png',
+                              'assets/icons/Love for Money.png',
                               'Nabung',
                               'Target Impian',
                               onTap: onSaving ??
@@ -419,7 +355,7 @@ class HomeScreenContent extends StatelessWidget {
                       // ----- TARGET TABUNGAN (COMPACT & MODERN PROGRESS) -----
                       _buildSectionCard(
                         title: 'Target Tabungan',
-                        iconPath: 'assets/icons/LoveforMoney.png',
+                        iconPath: 'assets/icons/Love for Money.png',
                         onTap: featuredSaving == null
                             ? onSaving ??
                                 () => Navigator.push(
@@ -608,33 +544,6 @@ class HomeScreenContent extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.22),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.flash_on_rounded,
-                                    size: 12, color: Colors.white),
-                                SizedBox(width: 4),
-                                Text(
-                                  'CATAT INSTAN',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
                           const SizedBox(height: 6),
                           const Text(
                             'Catat Pengeluaran',
@@ -656,27 +565,6 @@ class HomeScreenContent extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    // Eye-Catching Round Button
-                    Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.15),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.add_rounded,
-                        color: Color(0xFFFF7A00),
-                        size: 32,
-                      ),
-                    ),
                   ],
                 ),
                 const SizedBox(height: 14),
@@ -789,170 +677,214 @@ class HomeScreenContent extends StatelessWidget {
 
   // ==================== AIKU SMART INSIGHT CARD ====================
   Widget _buildAiInsightCard(BuildContext context, double spentPercentage) {
-    String aiMessage;
-    Color statusColor;
+    final now = DateTime.now();
+    final hasBudget = store.hasBudgetForMonth(now) && store.budget > 0;
+    final monthExpense = store
+        .expensesForMonth(now)
+        .fold<double>(0, (total, expense) => total + expense.amount);
+    final isOverBudget = hasBudget && monthExpense > store.budget;
+    final isNearBudget = hasBudget && spentPercentage >= 80 && !isOverBudget;
+    final statusColor = isOverBudget
+        ? const Color(0xFFD84315)
+        : isNearBudget
+            ? const Color(0xFFE06B00)
+            : const Color(0xFF2E7D32);
+    final headline = !hasBudget
+        ? 'Atur budget untuk memantau pengeluaranmu.'
+        : isOverBudget
+            ? 'Pengeluaranmu telah melewati batas!'
+            : isNearBudget
+                ? 'Pengeluaranmu hampir melewati batas!'
+                : 'Pengeluaranmu masih dalam batas aman.';
+    final analysis = !hasBudget
+        ? 'Total pengeluaranmu bulan ini ${rupiah(monthExpense)}. Atur budget bulanan agar AIKu dapat membantu memantau kondisi keuanganmu.'
+        : isOverBudget
+            ? 'Pengeluaranmu sudah melebihi budget sebesar ${rupiah((monthExpense - store.budget).toDouble())}. Tinjau kembali pengeluaran yang tidak mendesak agar kondisi keuangan tetap terkendali.'
+            : isNearBudget
+                ? 'Pengeluaranmu sudah mencapai ${spentPercentage.toStringAsFixed(1)}% dari budget bulanan. Dengan sisa budget ${rupiah(store.remainingBudget)}, sebaiknya kurangi pengeluaran yang tidak mendesak agar anggaranmu tetap terkendali.'
+                : 'Pengeluaranmu baru mencapai ${spentPercentage.toStringAsFixed(1)}% dari budget bulanan. Sisa budget ${rupiah(store.remainingBudget)}; pertahankan kebiasaan belanja sesuai prioritas.';
+    final suggestions = !hasBudget
+        ? const [
+            'Atur budget bulananmu.',
+            'Catat pengeluaran secara rutin.',
+            'Tinjau kembali pengeluaran tiap minggu.',
+          ]
+        : [
+            'Prioritaskan kebutuhan utama.',
+            isOverBudget || isNearBudget
+                ? 'Kurangi pembelian yang tidak direncanakan.'
+                : 'Sisihkan sisa budget untuk kebutuhan penting.',
+            'Pantau pengeluaran harianmu.',
+          ];
+    final analysisAction = onExpenseDetails ??
+        () => Navigator.push<void>(
+              context,
+              MaterialPageRoute(
+                builder: (_) => RecapScreen(store: store),
+              ),
+            );
 
-    if (store.isOverBudget) {
-      aiMessage =
-          'Pengeluaranmu telah melampaui budget sebesar ${rupiah(store.remainingBudget.abs())}. Disarankan menahan belanja tersier hingga akhir bulan.';
-      statusColor = const Color(0xFFE53935);
-    } else if (spentPercentage > 80) {
-      aiMessage =
-          'Kamu sudah memakai ${spentPercentage.toStringAsFixed(0)}% dari anggaranmu. Perketat pengeluaran agar saldo cukup sampai akhir bulan.';
-      statusColor = const Color(0xFFEF6C00);
-    } else {
-      aiMessage =
-          'Kondisi keuanganmu bulan ini sangat sehat! Pengeluaran baru ${spentPercentage.toStringAsFixed(0)}% dari total anggaran.';
-      statusColor = const Color(0xFF2E7D32);
-    }
-
-    return _buildSectionCard(
-      title: 'AIKu Smart Advisor',
-      icon: Icons.auto_awesome_rounded,
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const Text(
+            'AI Financial Assistant',
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Icon(
+                hasBudget && !isOverBudget && !isNearBudget
+                    ? Icons.check_circle_outline_rounded
+                    : Icons.warning_amber_rounded,
+                size: 20,
+                color: statusColor,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  headline,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Text(
+            rupiah(monthExpense),
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Total pengeluaran bulan ini',
+            style: TextStyle(color: Colors.black54, fontSize: 11),
+          ),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+              value: hasBudget ? (spentPercentage / 100).clamp(0, 1) : 0,
+              minHeight: 8,
+              backgroundColor: const Color(0xFFEEEEEE),
+              valueColor: AlwaysStoppedAnimation<Color>(statusColor),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Budget: ${hasBudget ? rupiah(store.budget) : 'Belum diatur'}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.black54, fontSize: 10),
+                ),
+              ),
+              if (hasBudget) ...[
+                const SizedBox(width: 8),
+                Text(
+                  '${spentPercentage.toStringAsFixed(1)}% terpakai',
+                  style: TextStyle(
+                    color: statusColor,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ],
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 14),
+            child: Divider(height: 1, color: Color(0xFFEEEEEE)),
+          ),
+          const Text(
+            'Analisis AI',
+            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            analysis,
+            style: const TextStyle(fontSize: 12, height: 1.5),
+          ),
+          const SizedBox(height: 12),
           Container(
+            width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFFBF5),
-              border: Border.all(color: const Color(0xFFFFE0B2)),
+              color: const Color(0xFFF3F3F3),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                const Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFF3E0),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(
-                        Icons.tips_and_updates_rounded,
-                        size: 20,
-                        color: Color(0xFFFAAE36),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Insight Pengeluaran',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF333333),
-                            ),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            aiMessage,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: Colors.black87,
-                              height: 1.3,
-                            ),
-                          ),
-                        ],
-                      ),
+                    Icon(Icons.lightbulb_outline_rounded,
+                        size: 17, color: Color(0xFFFF8A00)),
+                    SizedBox(width: 7),
+                    Text(
+                      'Saran untukmu',
+                      style:
+                          TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                const Divider(height: 1, color: Color(0xFFFFE0B2)),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Bulan: ${_monthLabel(DateTime.now())}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 10,
-                          color: Colors.black54,
-                        ),
-                      ),
-                    ),
-                    Row(
+                const SizedBox(height: 6),
+                for (final suggestion in suggestions)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 5, top: 3),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: statusColor,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          store.isOverBudget ? 'Over Budget' : 'Terkontrol',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: statusColor,
+                        const Text('•  ', style: TextStyle(fontSize: 12)),
+                        Expanded(
+                          child: Text(
+                            suggestion,
+                            style: const TextStyle(fontSize: 12, height: 1.4),
                           ),
                         ),
                       ],
                     ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                _buildFinancialChart(store),
+                  ),
               ],
             ),
           ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: onExpenseDetails,
-                  icon: const Icon(Icons.bar_chart_rounded, size: 16),
-                  label: const Text('Detail Pengeluaran'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.black87,
-                    side: const BorderSide(color: Colors.black26),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    textStyle: const TextStyle(
-                        fontSize: 11, fontWeight: FontWeight.bold),
-                  ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            height: 42,
+            child: ElevatedButton(
+              onPressed: analysisAction,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFAAE36),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
                 ),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => AiScreen(store: store),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.chat_bubble_outline_rounded, size: 16),
-                  label: const Text('Tanya AIKu'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFAAE36),
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    textStyle: const TextStyle(
-                        fontSize: 11, fontWeight: FontWeight.bold),
-                  ),
-                ),
+              child: const Text(
+                'Lihat Analisis Keuangan',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
               ),
-            ],
+            ),
           ),
         ],
       ),
@@ -1028,25 +960,25 @@ class HomeScreenContent extends StatelessWidget {
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(18),
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           color: Colors.white,
           border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
         child: Row(
           children: [
             Image.asset(iconPath, height: 32),
-            const SizedBox(width: 10),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1054,7 +986,7 @@ class HomeScreenContent extends StatelessWidget {
                   Text(
                     label,
                     style: const TextStyle(
-                      fontSize: 12,
+                      fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: Colors.black87,
                     ),
@@ -1062,7 +994,7 @@ class HomeScreenContent extends StatelessWidget {
                   Text(
                     subLabel,
                     style: const TextStyle(
-                      fontSize: 10,
+                      fontSize: 14,
                       color: Colors.black54,
                     ),
                   ),
@@ -1136,108 +1068,5 @@ class HomeScreenContent extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  Widget _buildFinancialChart(UkuStore store) {
-    final expense = store
-        .expensesForMonth(DateTime.now())
-        .fold<double>(0, (total, item) => total + item.amount);
-    final remaining = store.remainingBudget;
-    final maxY = [
-      store.budget,
-      expense,
-      remaining,
-    ].reduce((first, second) => first > second ? first : second);
-    final chartMax = maxY > 0 ? maxY : 1.0;
-
-    return SizedBox(
-      height: 110,
-      child: BarChart(
-        BarChartData(
-          maxY: chartMax,
-          minY: 0,
-          barTouchData: BarTouchData(enabled: false),
-          borderData: FlBorderData(show: false),
-          gridData: FlGridData(
-            drawVerticalLine: false,
-            horizontalInterval: chartMax / 4,
-            getDrawingHorizontalLine: (_) =>
-                const FlLine(color: Color(0xFFEDEDED), strokeWidth: 1),
-          ),
-          titlesData: FlTitlesData(
-            topTitles:
-                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            rightTitles:
-                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            leftTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 34,
-                getTitlesWidget: (value, _) => Text(
-                  _compactRupiah(value),
-                  style: const TextStyle(fontSize: 7, color: Colors.black54),
-                ),
-              ),
-            ),
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 20,
-                getTitlesWidget: (value, _) => Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    value.toInt() == 0 ? 'Pengeluaran' : 'Sisa budget',
-                    style: const TextStyle(fontSize: 7),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          barGroups: [
-            _financialBar(0, expense, const Color(0xFFFF7A00)),
-            _financialBar(
-                1, remaining > 0 ? remaining : 0, const Color(0xFF43A047)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  BarChartGroupData _financialBar(int x, double amount, Color color) =>
-      BarChartGroupData(
-        x: x,
-        barRods: [
-          BarChartRodData(
-            toY: amount,
-            width: 32,
-            color: color,
-            borderRadius: BorderRadius.circular(6),
-          ),
-        ],
-      );
-
-  String _monthLabel(DateTime date) {
-    const months = [
-      'Januari',
-      'Februari',
-      'Maret',
-      'April',
-      'Mei',
-      'Juni',
-      'Juli',
-      'Agustus',
-      'September',
-      'Oktober',
-      'November',
-      'Desember',
-    ];
-    return '${months[date.month - 1]} ${date.year}';
-  }
-
-  String _compactRupiah(double amount) {
-    if (amount >= 1000000) {
-      return '${(amount / 1000000).toStringAsFixed(1)}jt';
-    }
-    return '${(amount / 1000).round()}k';
   }
 }

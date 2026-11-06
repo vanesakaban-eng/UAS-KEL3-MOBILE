@@ -178,7 +178,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                         children: [
                           const Expanded(
                             child: Text(
-                              'Edit Budget Bulan Ini',
+                              'Tambah Budget Bulan Ini',
                               style: TextStyle(
                                 fontSize: 19,
                                 fontWeight: FontWeight.bold,

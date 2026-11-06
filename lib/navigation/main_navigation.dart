@@ -6,7 +6,7 @@ import 'package:uku_app/features/expense/expense_screen.dart';
 import 'package:uku_app/features/expense/monthly_expense_screen.dart';
 import 'package:uku_app/features/expense/recap_screen.dart';
 import 'package:uku_app/features/home/home_screen.dart';
-import 'package:uku_app/features/profile/edit_profil.dart';
+import 'package:uku_app/features/profile/profile_screen.dart';
 import 'package:uku_app/features/savings/saving_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
@@ -27,6 +27,8 @@ class MainNavigationScreen extends StatefulWidget {
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   late final UkuStore store;
+  late final ProfileSettingsRepository _profileRepository;
+  late String _currentUserName;
   int currentIndex = 0;
   bool showRecap = false;
   bool showSavings = false;
@@ -36,6 +38,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   void initState() {
     super.initState();
     store = widget.store ?? UkuStore();
+    _profileRepository =
+        widget.profileRepository ?? LocalProfileSettingsRepository();
+    _currentUserName = widget.userName;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && store.isOverBudget) {
         _showOverBudgetWarning();
@@ -114,6 +119,42 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     });
   }
 
+  Future<void> openProfile() async {
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ProfileScreen(
+          repository: _profileRepository,
+          userName: _currentUserName,
+          onBack: () {
+            Navigator.pop(context);
+            setState(() {
+              currentIndex = 0;
+              showRecap = false;
+              showSavings = false;
+              selectedSaving = null;
+            });
+          },
+        ),
+      ),
+    );
+    if (!mounted) return;
+    try {
+      final profile = await _profileRepository.load();
+      if (!mounted) return;
+      final updatedUserName =
+          profile.username.isNotEmpty ? profile.username : profile.name;
+      if (updatedUserName.isNotEmpty) {
+        setState(() => _currentUserName = updatedUserName);
+      }
+    } on Exception {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gagal memperbarui nama profil.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     const destinations = [
@@ -140,10 +181,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       else
         HomeScreenContent(
           store: store,
-          userName: widget.userName,
+          userName: _currentUserName,
           onExpense: openExpense,
           onExpenseCategory: (cat) => openExpense(cat),
-          onBudget: openBudget,
           onRecap: () => setState(() => showRecap = true),
           onSaving: () => openSavings(),
           onSavingTarget: openSavings,
@@ -154,11 +194,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         onBack: () => setState(() => currentIndex = 0),
       ),
       BudgetScreen(store: store),
-      EditProfileScreen(
-        repository: widget.profileRepository,
-        onBack: () => setState(() => currentIndex = 0),
-        onSaved: () => setState(() => currentIndex = 0),
-      ),
     ];
     return Scaffold(
       body: pages[currentIndex],
@@ -202,12 +237,14 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                       selected: currentIndex == index,
                       label: destinations[index].label,
                       child: InkWell(
-                        onTap: () => setState(() {
-                          currentIndex = index;
-                          showRecap = false;
-                          showSavings = false;
-                          selectedSaving = null;
-                        }),
+                        onTap: index == 3
+                            ? openProfile
+                            : () => setState(() {
+                                  currentIndex = index;
+                                  showRecap = false;
+                                  showSavings = false;
+                                  selectedSaving = null;
+                                }),
                         child: SizedBox.expand(
                           child: Column(
                             children: [

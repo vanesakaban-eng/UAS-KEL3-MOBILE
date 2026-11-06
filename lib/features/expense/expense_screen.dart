@@ -5,7 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uku_app/data/category_icons.dart';
 import 'package:uku_app/data/uku_store.dart';
-import 'package:uku_app/features/ai/ai_screen.dart';
+import 'package:uku_app/features/expense/receipt_ocr.dart';
+import 'package:uku_app/features/expense/receipt_text_parser.dart';
 import 'package:uku_app/widgets/app_back_button.dart';
 
 class ExpenseScreen extends StatefulWidget {
@@ -68,7 +69,9 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
   bool _showBillCamera = false;
   CameraController? _cameraController;
   bool _cameraLoading = false;
+  bool _isRecognizingBill = false;
   String? _cameraError;
+  String? _billScanMessage;
 
   @override
   void initState() {
@@ -79,7 +82,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
     }
   }
 
-  static const inputModes = ['Manual', 'Foto Bill', 'AIku'];
+  static const inputModes = ['Manual', 'Foto Bill'];
 
   static const categories = [
     'Makanan & Minuman',
@@ -171,6 +174,8 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
       _step = 0;
       _billImage = null;
       _showBillCamera = false;
+      _isRecognizingBill = false;
+      _billScanMessage = null;
     });
     final navigator = Navigator.of(context);
     if (navigator.canPop()) navigator.pop();
@@ -197,12 +202,58 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
       if (image == null) return;
       final bytes = await image.readAsBytes();
       if (!mounted) return;
-      setState(() => _billImage = bytes);
-    } catch (_) {
+      setState(() {
+        _billImage = bytes;
+        _billScanMessage = null;
+      });
+      await _recognizeBill(image.path);
+    } on Exception {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Tidak dapat membuka gambar')),
       );
+    }
+  }
+
+  Future<void> _recognizeBill(String imagePath) async {
+    if (!ReceiptOcr.isSupported) {
+      setState(() {
+        _billScanMessage =
+            'Pembacaan otomatis tersedia di aplikasi Android dan iOS.';
+      });
+      _continueFromBillCamera();
+      return;
+    }
+
+    setState(() {
+      _isRecognizingBill = true;
+      _billScanMessage = null;
+    });
+    try {
+      final recognizedText = await ReceiptOcr.recognize(imagePath);
+      if (!mounted) return;
+      final result = parseReceiptText(recognizedText);
+      setState(() {
+        if (result.amount != null) {
+          _amount.text = result.amount!.toStringAsFixed(0);
+        }
+        if (result.date != null) selectedDate = result.date!;
+        if (result.merchant != null) _location.text = result.merchant!;
+        _isRecognizingBill = false;
+        _billScanMessage = result.amount != null
+            ? 'Nominal bill terdeteksi. Periksa kembali sebelum menyimpan.'
+            : recognizedText.isEmpty
+                ? 'Teks bill belum terbaca. Coba foto ulang dengan lebih jelas.'
+                : 'Bill terbaca, tetapi nominal tidak ditemukan. Isi manual.';
+      });
+      _continueFromBillCamera();
+    } on Exception {
+      if (!mounted) return;
+      setState(() {
+        _isRecognizingBill = false;
+        _billScanMessage = 'Pembacaan gagal. Anda tetap bisa mengisi manual.';
+      });
+      _continueFromBillCamera();
     }
   }
 
@@ -251,13 +302,18 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
     try {
       final image = await controller.takePicture();
       final bytes = await image.readAsBytes();
-      if (!mounted) return;
+      if (!mounted) {
+        await controller.dispose();
+        return;
+      }
       setState(() {
         _billImage = bytes;
         _cameraController = null;
+        _billScanMessage = null;
       });
       await controller.dispose();
-    } catch (_) {
+      await _recognizeBill(image.path);
+    } on Exception {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Tidak dapat mengambil foto')),
@@ -272,8 +328,19 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
       _billImage = null;
       _cameraController = null;
       _cameraLoading = false;
+      _isRecognizingBill = false;
+      _billScanMessage = null;
     });
     controller?.dispose();
+  }
+
+  void _retakeBillImage() {
+    setState(() {
+      _billImage = null;
+      _billScanMessage = null;
+      _showBillCamera = true;
+    });
+    _initializeCamera();
   }
 
   void _continueFromBillCamera() {
@@ -319,6 +386,20 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
               style: TextStyle(color: Colors.white70, fontSize: 14),
             ),
             const SizedBox(height: 8),
+            if (_isRecognizingBill) ...[
+              const LinearProgressIndicator(color: Color(0xFFFF8800)),
+              const SizedBox(height: 6),
+              const Text(
+                'Membaca nominal dan tanggal bill...',
+                style: TextStyle(color: Colors.white70, fontSize: 12),
+              ),
+            ] else if (_billScanMessage != null) ...[
+              Text(
+                _billScanMessage!,
+                style: const TextStyle(color: Colors.white70, fontSize: 12),
+              ),
+              const SizedBox(height: 6),
+            ],
             Expanded(
               child: ColoredBox(
                 color: Colors.black,
@@ -379,15 +460,17 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                           _cameraActionButton(
                             tooltip: 'Pilih foto dari galeri',
                             icon: Icons.image_outlined,
-                            onPressed: () =>
-                                _pickBillImage(ImageSource.gallery),
+                            onPressed: _isRecognizingBill
+                                ? null
+                                : () => _pickBillImage(ImageSource.gallery),
                           ),
                           const SizedBox(width: 20),
                           _cameraActionButton(
                             tooltip: 'Ambil foto',
                             icon: Icons.camera_alt_outlined,
-                            onPressed:
-                                _cameraController?.value.isInitialized == true
+                            onPressed: _isRecognizingBill
+                                ? null
+                                : _cameraController?.value.isInitialized == true
                                     ? _captureImage
                                     : () => _pickBillImage(ImageSource.camera),
                           ),
@@ -395,7 +478,9 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                           _cameraActionButton(
                             tooltip: 'Lanjutkan',
                             icon: Icons.check,
-                            onPressed: _continueFromBillCamera,
+                            onPressed: _isRecognizingBill
+                                ? null
+                                : _continueFromBillCamera,
                           ),
                         ],
                       ),
@@ -412,6 +497,13 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
 
   void _selectMethod(String value) {
     setState(() => method = value);
+  }
+
+  void _selectInputMode(String value) {
+    setState(() {
+      inputMode = value;
+      method = value == 'Foto Bill' ? null : 'Tunai';
+    });
   }
 
   InputDecoration _decoration(String hint) => InputDecoration(
@@ -452,18 +544,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
             Expanded(
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTap: () {
-                  if (mode == 'AIku') {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => AiScreen(store: widget.store),
-                      ),
-                    );
-                    return;
-                  }
-                  setState(() => inputMode = mode);
-                },
+                onTap: () => _selectInputMode(mode),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 180),
                   height: 42,
@@ -531,6 +612,58 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
             ),
             _buildInputModeSelector(),
             const SizedBox(height: 18),
+            if (inputMode == 'Foto Bill' && _billImage != null) ...[
+              Container(
+                padding: const EdgeInsets.all(10),
+                margin: const EdgeInsets.only(bottom: 14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF7ED),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFFFD180)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.memory(
+                        _billImage!,
+                        height: 130,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                    if (_isRecognizingBill) ...[
+                      const SizedBox(height: 8),
+                      const LinearProgressIndicator(
+                        color: Color(0xFFFF8800),
+                      ),
+                    ] else if (_billScanMessage != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        _billScanMessage!,
+                        style: const TextStyle(
+                          color: Color(0xFF8A4B08),
+                          fontSize: 12,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                        onPressed: _retakeBillImage,
+                        icon: const Icon(Icons.refresh, size: 18),
+                        label: const Text('Foto ulang'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: const Color(0xFFE07A00),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             if (_step == 0) ...[
               const Align(
                 alignment: Alignment.center,
@@ -725,14 +858,6 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
               TextFormField(
                   controller: _purpose,
                   decoration: _decoration('Untuk apa pengeluaran ini?')),
-              const SizedBox(height: 14),
-              const Text('Jenis Pengeluaran',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 7),
-              InputDecorator(
-                decoration: _decoration(''),
-                child: Text(category ?? ''),
-              ),
               const SizedBox(height: 14),
               const Text('Metode',
                   style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),

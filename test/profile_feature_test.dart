@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uku_app/data/profile_settings_repository.dart';
 import 'package:uku_app/features/auth/forgot_password_screen.dart';
+import 'package:uku_app/features/profile/about_us_screen.dart';
 import 'package:uku_app/features/profile/change_password_screen.dart';
 import 'package:uku_app/features/profile/edit_profil.dart';
+import 'package:uku_app/features/profile/profile_screen.dart';
 import 'package:uku_app/navigation/main_navigation.dart';
 
 class _FakeProfileSettingsRepository implements ProfileSettingsRepository {
@@ -27,6 +29,48 @@ class _FakeProfileSettingsRepository implements ProfileSettingsRepository {
 }
 
 void main() {
+  testWidgets('profile About Us menu opens the About Us page', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ProfileScreen(
+          repository: _FakeProfileSettingsRepository(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Tentang Kami'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AboutUsScreen), findsOneWidget);
+    expect(find.text('Intelligent Personal Finance & Budget Manager'),
+        findsOneWidget);
+    expect(find.text('Visi & Misi'), findsOneWidget);
+    expect(find.text('Tim Pengembang'), findsOneWidget);
+    expect(find.text('AIKu Notifikasi'), findsOneWidget);
+    final featureIcons = tester
+        .widgetList<Image>(find.descendant(
+          of: find.byType(AboutUsScreen),
+          matching: find.byType(Image),
+        ))
+        .map((image) => (image.image as AssetImage).assetName)
+        .toList();
+    expect(
+      featureIcons,
+      containsAll([
+        'assets/icons/Plus.png',
+        'assets/icons/Spiral Bound Booklet.png',
+        'assets/icons/Love for Money.png',
+        'assets/icons/AI.png',
+      ]),
+    );
+  });
+
   testWidgets('profile edit matches the requested form layout', (tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;

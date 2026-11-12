@@ -9,11 +9,13 @@ class SavingDetailScreen extends StatefulWidget {
     required this.store,
     required this.saving,
     this.onBack,
+    this.onHome,
   });
 
   final UkuStore store;
   final Saving saving;
   final VoidCallback? onBack;
+  final VoidCallback? onHome;
 
   @override
   State<SavingDetailScreen> createState() => _SavingDetailScreenState();
@@ -165,7 +167,7 @@ class _SavingDetailScreenState extends State<SavingDetailScreen> {
                       SizedBox(
                         height: 36,
                         child: ElevatedButton(
-                          onPressed: _goBack,
+                          onPressed: widget.onHome ?? _goBack,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: _orange,
                             foregroundColor: Colors.white,

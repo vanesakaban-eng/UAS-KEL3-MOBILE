@@ -15,6 +15,7 @@ class UKuApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'UKu',
       theme: ThemeData(
+        fontFamily: 'Roboto',
         scaffoldBackgroundColor: Colors.white,
       ),
       home: const SplashScreen(),

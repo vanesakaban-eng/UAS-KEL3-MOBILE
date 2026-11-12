@@ -5,9 +5,8 @@ import 'package:uku_app/features/budget/budget_screen.dart';
 import 'package:uku_app/features/expense/expense_screen.dart';
 import 'package:uku_app/features/expense/monthly_expense_screen.dart';
 import 'package:uku_app/features/expense/recap_screen.dart';
-import 'package:uku_app/features/expense/transactions_screen.dart';
 import 'package:uku_app/features/home/home_screen.dart';
-import 'package:uku_app/features/profile/edit_profil.dart';
+import 'package:uku_app/features/profile/profile_screen.dart';
 import 'package:uku_app/features/savings/saving_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
@@ -28,6 +27,8 @@ class MainNavigationScreen extends StatefulWidget {
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   late final UkuStore store;
+  late final ProfileSettingsRepository _profileRepository;
+  late String _currentUserName;
   int currentIndex = 0;
   bool showRecap = false;
   bool showSavings = false;
@@ -37,6 +38,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   void initState() {
     super.initState();
     store = widget.store ?? UkuStore();
+    _profileRepository =
+        widget.profileRepository ?? LocalProfileSettingsRepository();
+    _currentUserName = widget.userName;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && store.isOverBudget) {
         _showOverBudgetWarning();
@@ -83,16 +87,28 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     );
   }
 
-  void openExpense() {
+  void openBudget() {
+    setState(() {
+      currentIndex = 2;
+      showRecap = false;
+      showSavings = false;
+      selectedSaving = null;
+    });
+  }
+
+  void openExpense([String? initialCategory]) {
     Navigator.push<void>(
       context,
       MaterialPageRoute(
-        builder: (_) => Scaffold(body: ExpenseScreen(store: store)),
+        builder: (_) => Scaffold(
+          body: ExpenseScreen(
+            store: store,
+            initialCategory: initialCategory,
+          ),
+        ),
       ),
     );
   }
-
-  void openBudget() => setState(() => currentIndex = 2);
 
   void openSavings([Saving? saving]) {
     setState(() {
@@ -103,13 +119,48 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     });
   }
 
+  Future<void> openProfile() async {
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ProfileScreen(
+          repository: _profileRepository,
+          userName: _currentUserName,
+          onBack: () {
+            Navigator.pop(context);
+            setState(() {
+              currentIndex = 0;
+              showRecap = false;
+              showSavings = false;
+              selectedSaving = null;
+            });
+          },
+        ),
+      ),
+    );
+    if (!mounted) return;
+    try {
+      final profile = await _profileRepository.load();
+      if (!mounted) return;
+      final updatedUserName =
+          profile.username.isNotEmpty ? profile.username : profile.name;
+      if (updatedUserName.isNotEmpty) {
+        setState(() => _currentUserName = updatedUserName);
+      }
+    } on Exception {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gagal memperbarui nama profil.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     const destinations = [
       (label: 'Beranda'),
       (label: 'Rekap'),
       (label: 'Budget'),
-      (label: 'Transaksi'),
       (label: 'Profil'),
     ];
     final pages = [
@@ -130,13 +181,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       else
         HomeScreenContent(
           store: store,
-          userName: widget.userName,
+          userName: _currentUserName,
           onExpense: openExpense,
-          onBudget: openBudget,
+          onExpenseCategory: (cat) => openExpense(cat),
           onRecap: () => setState(() => showRecap = true),
           onSaving: () => openSavings(),
           onSavingTarget: openSavings,
-          onTransactions: () => setState(() => currentIndex = 3),
           onExpenseDetails: () => setState(() => currentIndex = 1),
         ),
       MonthlyExpenseScreen(
@@ -144,19 +194,33 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         onBack: () => setState(() => currentIndex = 0),
       ),
       BudgetScreen(store: store),
-      TransactionsScreen(
-        store: store,
-        onBack: () => setState(() => currentIndex = 0),
-      ),
-      EditProfileScreen(
-        repository: widget.profileRepository,
-        onBack: () => setState(() => currentIndex = 0),
-        onSaved: () => setState(() => currentIndex = 0),
-      ),
     ];
     return Scaffold(
       body: pages[currentIndex],
-      floatingActionButton: currentIndex == 0 ? null : null,
+      floatingActionButton: FloatingActionButton(
+        tooltip: 'Catat Pengeluaran',
+        onPressed: () => openExpense(),
+        backgroundColor: const Color(0xFFFF8800),
+        elevation: 6,
+        shape: const CircleBorder(),
+        child: Container(
+          width: 56,
+          height: 56,
+          decoration: const BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              colors: [Color(0xFFFAAE36), Color(0xFFFF7A00)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: const Icon(
+            Icons.add_rounded,
+            color: Colors.white,
+            size: 32,
+          ),
+        ),
+      ),
       bottomNavigationBar: Material(
         color: Colors.white,
         elevation: 8,
@@ -173,12 +237,14 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                       selected: currentIndex == index,
                       label: destinations[index].label,
                       child: InkWell(
-                        onTap: () => setState(() {
-                          currentIndex = index;
-                          showRecap = false;
-                          showSavings = false;
-                          selectedSaving = null;
-                        }),
+                        onTap: index == 3
+                            ? openProfile
+                            : () => setState(() {
+                                  currentIndex = index;
+                                  showRecap = false;
+                                  showSavings = false;
+                                  selectedSaving = null;
+                                }),
                         child: SizedBox.expand(
                           child: Column(
                             children: [
@@ -220,18 +286,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                                     currentIndex == index
                                         ? 'assets/icons/Budget (1).png'
                                         : 'assets/icons/Budget.png',
-                                  ),
-                                  size: 25,
-                                  color: currentIndex == index
-                                      ? const Color(0xFFFAAE36)
-                                      : const Color(0xFFD0D0D0),
-                                )
-                              else if (index == 3)
-                                ImageIcon(
-                                  AssetImage(
-                                    currentIndex == index
-                                        ? 'assets/icons/Payment History.png'
-                                        : 'assets/icons/Payment History (1).png',
                                   ),
                                   size: 25,
                                   color: currentIndex == index

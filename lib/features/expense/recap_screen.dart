@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:uku_app/data/uku_store.dart';
+import 'package:uku_app/features/expense/activity_filter.dart';
 import 'package:uku_app/widgets/app_back_button.dart';
 
 class RecapScreen extends StatefulWidget {
@@ -16,6 +17,8 @@ class RecapScreen extends StatefulWidget {
 }
 
 class _RecapScreenState extends State<RecapScreen> {
+  static const _accentColor = Color(0xFFFFAD2F);
+
   static const _monthNames = [
     'Januari',
     'Februari',
@@ -32,6 +35,7 @@ class _RecapScreenState extends State<RecapScreen> {
   ];
 
   late DateTime _month;
+  ActivityFilter _activityFilter = const ActivityFilter();
 
   @override
   void initState() {
@@ -51,84 +55,106 @@ class _RecapScreenState extends State<RecapScreen> {
       context: context,
       builder: (context) {
         var selectedYear = _month.year;
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: const Text('Pilih Bulan & Tahun'),
-              content: SizedBox(
-                width: 320,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        IconButton(
-                          tooltip: 'Tahun sebelumnya',
-                          onPressed: selectedYear > 2020
-                              ? () => setDialogState(() => selectedYear--)
-                              : null,
-                          icon: const Icon(Icons.chevron_left),
-                        ),
-                        Text(
-                          '$selectedYear',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+                  primary: _accentColor,
+                  secondary: _accentColor,
+                ),
+          ),
+          child: StatefulBuilder(
+            builder: (context, setDialogState) {
+              return AlertDialog(
+                backgroundColor: Colors.white,
+                surfaceTintColor: Colors.white,
+                title: const Text('Pilih Bulan & Tahun'),
+                content: SizedBox(
+                  width: 320,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          IconButton(
+                            tooltip: 'Tahun sebelumnya',
+                            onPressed: selectedYear > 2020
+                                ? () => setDialogState(() => selectedYear--)
+                                : null,
+                            icon: const Icon(Icons.chevron_left),
                           ),
-                        ),
-                        IconButton(
-                          tooltip: 'Tahun berikutnya',
-                          onPressed: selectedYear < 2035
-                              ? () => setDialogState(() => selectedYear++)
-                              : null,
-                          icon: const Icon(Icons.chevron_right),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    GridView.count(
-                      crossAxisCount: 3,
-                      shrinkWrap: true,
-                      mainAxisSpacing: 8,
-                      crossAxisSpacing: 8,
-                      childAspectRatio: 2.2,
-                      physics: const NeverScrollableScrollPhysics(),
-                      children: [
-                        for (var month = 0; month < _monthNames.length; month++)
-                          OutlinedButton(
-                            onPressed: () => Navigator.of(context).pop(
-                              DateTime(selectedYear, month + 1),
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: const Color(0xFF292929),
-                              side: const BorderSide(color: Color(0xFFE0E0E0)),
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 4),
-                            ),
-                            child: Text(
-                              _monthNames[month],
-                              style: const TextStyle(fontSize: 11),
+                          Text(
+                            '$selectedYear',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                      ],
-                    ),
-                  ],
+                          IconButton(
+                            tooltip: 'Tahun berikutnya',
+                            onPressed: selectedYear < 2035
+                                ? () => setDialogState(() => selectedYear++)
+                                : null,
+                            icon: const Icon(Icons.chevron_right),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      GridView.count(
+                        crossAxisCount: 3,
+                        shrinkWrap: true,
+                        mainAxisSpacing: 8,
+                        crossAxisSpacing: 8,
+                        childAspectRatio: 2.2,
+                        physics: const NeverScrollableScrollPhysics(),
+                        children: [
+                          for (var month = 0;
+                              month < _monthNames.length;
+                              month++)
+                            OutlinedButton(
+                              onPressed: () => Navigator.of(context).pop(
+                                DateTime(selectedYear, month + 1),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: _accentColor,
+                                side: const BorderSide(color: _accentColor),
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 4),
+                              ),
+                              child: Text(
+                                _monthNames[month],
+                                style: const TextStyle(fontSize: 11),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Batal'),
-                ),
-              ],
-            );
-          },
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Batal'),
+                  ),
+                ],
+              );
+            },
+          ),
         );
       },
     );
     if (picked != null) {
       setState(() => _month = picked);
+    }
+  }
+
+  Future<void> _openFilters() async {
+    final filter = await showActivityFilterSheet(
+      context,
+      initialFilter: _activityFilter,
+    );
+    if (filter != null) {
+      setState(() => _activityFilter = filter);
     }
   }
 
@@ -139,7 +165,8 @@ class _RecapScreenState extends State<RecapScreen> {
       builder: (context, _) {
         final expenses = widget.store.expensesForMonth(_month)
           ..sort((a, b) => b.date.compareTo(a.date));
-        final activities = widget.store.activitiesForMonth(_month);
+        final monthActivities = widget.store.activitiesForMonth(_month);
+        final activities = filterActivities(monthActivities, _activityFilter);
         final dailyTotals = <int, double>{};
         for (final expense in expenses) {
           dailyTotals.update(
@@ -216,7 +243,7 @@ class _RecapScreenState extends State<RecapScreen> {
                           ),
                         ),
                         const Icon(Icons.calendar_month,
-                            size: 18, color: Color(0xFFFAAE36)),
+                            size: 18, color: Color.fromARGB(255, 0, 0, 0)),
                       ],
                     ),
                   ),
@@ -331,20 +358,28 @@ class _RecapScreenState extends State<RecapScreen> {
                           TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                     ),
                   ),
-                  Text(
-                    '${activities.length} aktivitas',
-                    style: const TextStyle(color: Colors.black54, fontSize: 11),
+                  IconButton(
+                    tooltip: 'Filter aktivitas',
+                    onPressed: _openFilters,
+                    icon: Image.asset(
+                      'assets/icons/Group 74.png',
+                      width: 36,
+                      height: 36,
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
               if (activities.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 20),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
                   child: Center(
                     child: Text(
-                      'Belum ada riwayat aktivitas',
-                      style: TextStyle(color: Colors.black54, fontSize: 12),
+                      _activityFilter.hasFilters
+                          ? 'Tidak ada aktivitas sesuai filter'
+                          : 'Belum ada riwayat aktivitas',
+                      style:
+                          const TextStyle(color: Colors.black54, fontSize: 12),
                     ),
                   ),
                 )

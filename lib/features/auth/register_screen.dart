@@ -29,6 +29,13 @@ class _RegisterState extends State<Register> {
 
   Future<void> _register() async {
     if (_isLoading || !_formKey.currentState!.validate()) return;
+    if (_passwordController.text != _confirmController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Konfirmasi password tidak cocok.')),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
     try {
       await MobileApi.shared.register(
@@ -118,32 +125,56 @@ class _RegisterState extends State<Register> {
                 controller: _confirmController,
                 obscureText: !_showPasswords,
                 decoration: _decoration(
-                  'Ulangi Password',
+                  'Konfirmasi Password',
                   suffixIcon: _passwordToggle(),
                 ),
-                validator: (value) => value != _passwordController.text
-                    ? 'Konfirmasi password tidak sama.'
+                validator: (value) => value == null || value.isEmpty
+                    ? 'Konfirmasi password wajib diisi.'
                     : null,
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 22),
               SizedBox(
-                height: 50,
+                width: double.infinity,
+                height: 48,
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _register,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _orange,
-                    foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  child: Text(_isLoading ? 'Mengirim kode...' : 'Daftar'),
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          'Daftar',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
+                        ),
                 ),
               ),
               const SizedBox(height: 18),
-              TextButton(
-                onPressed: _isLoading ? null : () => Navigator.pop(context),
-                child: const Text('Sudah punya akun? Kembali ke Login'),
+              Center(
+                child: GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: const Text(
+                    'Sudah punya akun? Kembali ke Login',
+                    style: TextStyle(
+                      color: Color(0xFFFAAE36),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
               ),
             ],
           ),

@@ -374,7 +374,7 @@ class UkuStore extends ChangeNotifier {
         date: DateTime.now(),
         description: 'Setoran tabungan · ${saving.category}',
         iconPath: categoryIconPathOrNull(saving.category) ??
-            'assets/icons/LoveforMoney.png',
+            'assets/icons/Love for Money.png',
         category: saving.category,
       ),
     );

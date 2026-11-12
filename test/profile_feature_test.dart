@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uku_app/data/profile_settings_repository.dart';
+import 'package:uku_app/features/auth/forgot_password_screen.dart';
+import 'package:uku_app/features/profile/about_us_screen.dart';
 import 'package:uku_app/features/profile/change_password_screen.dart';
 import 'package:uku_app/features/profile/edit_profil.dart';
+import 'package:uku_app/features/profile/profile_screen.dart';
 import 'package:uku_app/navigation/main_navigation.dart';
 
 class _FakeProfileSettingsRepository implements ProfileSettingsRepository {
@@ -26,6 +29,48 @@ class _FakeProfileSettingsRepository implements ProfileSettingsRepository {
 }
 
 void main() {
+  testWidgets('profile About Us menu opens the About Us page', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ProfileScreen(
+          repository: _FakeProfileSettingsRepository(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Tentang Kami'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AboutUsScreen), findsOneWidget);
+    expect(find.text('Intelligent Personal Finance & Budget Manager'),
+        findsOneWidget);
+    expect(find.text('Visi & Misi'), findsOneWidget);
+    expect(find.text('Tim Pengembang'), findsOneWidget);
+    expect(find.text('AIKu Notifikasi'), findsOneWidget);
+    final featureIcons = tester
+        .widgetList<Image>(find.descendant(
+          of: find.byType(AboutUsScreen),
+          matching: find.byType(Image),
+        ))
+        .map((image) => (image.image as AssetImage).assetName)
+        .toList();
+    expect(
+      featureIcons,
+      containsAll([
+        'assets/icons/Plus.png',
+        'assets/icons/Spiral Bound Booklet.png',
+        'assets/icons/Love for Money.png',
+        'assets/icons/AI.png',
+      ]),
+    );
+  });
+
   testWidgets('profile edit matches the requested form layout', (tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
@@ -33,6 +78,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     final repository = _FakeProfileSettingsRepository();
+    repository.profile = const ProfileSettings(email: 'user@example.com');
     await tester.pumpWidget(MaterialApp(
       home: EditProfileScreen(
         repository: repository,
@@ -60,6 +106,17 @@ void main() {
     expect(find.text('Perbarui Kata Sandi'), findsOneWidget);
     expect(find.text('Batalkan'), findsOneWidget);
     expect(find.text('Lupa Password?'), findsOneWidget);
+
+    await tester.tap(find.text('Lupa Password?'));
+    await tester.pumpAndSettle();
+    expect(find.byType(ForgotPasswordScreen), findsOneWidget);
+    expect(find.text('Kirim Kode Reset'), findsOneWidget);
+    expect(
+      tester.widget<TextField>(find.byType(TextField).first).controller!.text,
+      'user@example.com',
+    );
+    await tester.tap(find.byTooltip('Kembali'));
+    await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextFormField).at(0), 'saved-password');
     await tester.enterText(find.byType(TextFormField).at(1), 'new-password');
@@ -105,10 +162,48 @@ void main() {
     expect(find.text('Beranda'), findsOneWidget);
     expect(find.text('Rekap'), findsOneWidget);
     expect(find.text('Budget'), findsOneWidget);
-    expect(find.text('Transaksi'), findsOneWidget);
+    expect(find.text('Transaksi'), findsNothing);
 
     await tester.tap(find.byTooltip('Kembali'));
     await tester.pumpAndSettle();
     expect(find.text('Halo, User'), findsOneWidget);
+  });
+
+  testWidgets('forgot password uses the password page styling', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: ForgotPasswordScreen(initialEmail: 'user@example.com'),
+      ),
+    );
+
+    expect(find.text('Lupa Password'), findsOneWidget);
+    expect(find.text('Email Akun'), findsOneWidget);
+    expect(find.text('Kirim Kode Reset'), findsOneWidget);
+    expect(find.byTooltip('Kembali'), findsOneWidget);
+    expect(find.byType(AppBar), findsNothing);
+    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,
+        'user@example.com');
+
+    final emailField = find.byType(TextField);
+    final inputDecoration = tester.widget<TextField>(emailField).decoration!;
+    expect(inputDecoration.border, isA<OutlineInputBorder>());
+    expect(
+      (inputDecoration.border as OutlineInputBorder).borderRadius,
+      BorderRadius.circular(7),
+    );
+    expect(
+      tester.getSize(find
+          .ancestor(
+            of: emailField,
+            matching: find.byType(SizedBox),
+          )
+          .first),
+      const Size(334, 34),
+    );
   });
 }

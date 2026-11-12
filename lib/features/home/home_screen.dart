@@ -144,7 +144,7 @@ class HomeScreenContent extends StatelessWidget {
                           ]),
                           const SizedBox(height: 14),
                           _buildSectionCard(
-                              title: 'AI Notifikasi',
+                              title: 'Ringkasan Keuangan',
                               icon: Icons.auto_awesome,
                               child: Column(
                                 children: [
@@ -234,7 +234,7 @@ class HomeScreenContent extends StatelessWidget {
                                         ),
                                       ),
                                       child: const Text(
-                                        'Klik Untuk Detail Transaksi',
+                                        'Lihat pengeluaran bulanan',
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.bold,

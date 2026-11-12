@@ -103,7 +103,7 @@ void main() {
 
     expect(find.text('Edit Profil'), findsOneWidget);
     expect(find.text('Beranda'), findsOneWidget);
-    expect(find.text('Pengeluaran'), findsOneWidget);
+    expect(find.text('Rekap'), findsOneWidget);
     expect(find.text('Budget'), findsOneWidget);
     expect(find.text('Transaksi'), findsOneWidget);
 

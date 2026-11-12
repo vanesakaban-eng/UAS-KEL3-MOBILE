@@ -4,6 +4,7 @@ import 'package:uku_app/data/mobile_api.dart';
 import 'package:uku_app/data/uku_store.dart';
 import 'package:uku_app/features/auth/forgot_password_screen.dart';
 import 'package:uku_app/features/auth/register_screen.dart';
+import 'package:uku_app/features/auth/verify_email_screen.dart';
 import 'package:uku_app/navigation/main_navigation.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -17,6 +18,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _showPassword = false;
+  String? _verificationEmail;
 
   @override
   void dispose() {
@@ -47,12 +50,52 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     } catch (error) {
       if (!mounted) return;
+      if (error is MobileApiException && error.code == 'EMAIL_NOT_VERIFIED') {
+        setState(() => _verificationEmail = _emailController.text.trim());
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(error.toString())),
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _openRegister() async {
+    final email = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(builder: (_) => const Register()),
+    );
+    if (email == null || !mounted) return;
+    setState(() => _verificationEmail = email);
+    _emailController.text = email;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Periksa email, lalu verifikasi akun sebelum login.'),
+      ),
+    );
+  }
+
+  Future<void> _openVerification() async {
+    final email = _verificationEmail ?? _emailController.text.trim();
+    if (email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Masukkan email yang akan diverifikasi.')),
+      );
+      return;
+    }
+    final verifiedEmail = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => VerifyEmailScreen(initialEmail: email),
+      ),
+    );
+    if (verifiedEmail == null || !mounted) return;
+    setState(() => _verificationEmail = null);
+    _emailController.text = verifiedEmail;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Email terverifikasi. Silakan login.')),
+    );
   }
 
   Future<void> _openForgotPassword() async {
@@ -101,7 +144,7 @@ class _LoginScreenState extends State<LoginScreen> {
               _buildTextField(
                 hintText: 'Password',
                 controller: _passwordController,
-                isObscure: true,
+                isPassword: true,
               ),
               Align(
                 alignment: Alignment.centerRight,
@@ -116,134 +159,17 @@ class _LoginScreenState extends State<LoginScreen> {
                 text: 'Login',
                 onPressed: _isLoading ? null : _login,
               ),
-              IntrinsicHeight(
-                child: Container(
-                  margin: const EdgeInsets.only(
-                      top: 13, bottom: 13, left: 47, right: 47),
-                  width: double.infinity,
-                  child: Column(children: [
-                    IntrinsicWidth(
-                      child: IntrinsicHeight(
-                        child: Container(
-                          margin: const EdgeInsets.only(bottom: 13),
-                          width: double.infinity,
-                          child: Row(children: [
-                            Container(
-                              color: Color(0xFF9E9E9E),
-                              margin: const EdgeInsets.only(right: 8),
-                              width: 75,
-                              height: 1,
-                              child: SizedBox(),
-                            ),
-                            Container(
-                              margin: const EdgeInsets.only(right: 10),
-                              child: Text(
-                                "Atau login  menggunakan",
-                                style: TextStyle(
-                                  color: Color(0xFF9E9E9E),
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ),
-                            Container(
-                              color: Color(0xFF9E9E9E),
-                              width: 74,
-                              height: 1,
-                              child: SizedBox(),
-                            ),
-                          ]),
-                        ),
-                      ),
-                    ),
-                    IntrinsicWidth(
-                      child: IntrinsicHeight(
-                        child: Row(children: [
-                          InkWell(
-                            onTap: () {
-                              print('Pressed');
-                            },
-                            child: IntrinsicWidth(
-                              child: IntrinsicHeight(
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(15),
-                                    color: Color(0xFFFAAE36),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Color(0x36000000),
-                                        blurRadius: 10,
-                                        offset: Offset(0, 0),
-                                      ),
-                                    ],
-                                  ),
-                                  padding: const EdgeInsets.all(9),
-                                  margin: const EdgeInsets.only(right: 32),
-                                  child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Container(
-                                            width: 36,
-                                            height: 36,
-                                            child: Image.network(
-                                              "https://storage.googleapis.com/tagjs-prod.appspot.com/v1/EkWxkRXtj2/yto9kz03_expires_30_days.png",
-                                              fit: BoxFit.fill,
-                                            )),
-                                      ]),
-                                ),
-                              ),
-                            ),
-                          ),
-                          InkWell(
-                            onTap: () {
-                              print('Pressed');
-                            },
-                            child: IntrinsicWidth(
-                              child: IntrinsicHeight(
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(15),
-                                    color: Color(0xFFFAAE36),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Color(0x36000000),
-                                        blurRadius: 10,
-                                        offset: Offset(0, 0),
-                                      ),
-                                    ],
-                                  ),
-                                  padding: const EdgeInsets.all(4),
-                                  child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Container(
-                                            width: 46,
-                                            height: 46,
-                                            child: Image.network(
-                                              "https://storage.googleapis.com/tagjs-prod.appspot.com/v1/EkWxkRXtj2/5q3bpj2q_expires_30_days.png",
-                                              fit: BoxFit.fill,
-                                            )),
-                                      ]),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ]),
-                      ),
-                    ),
-                  ]),
+              if (_verificationEmail != null)
+                TextButton.icon(
+                  onPressed: _openVerification,
+                  icon: const Icon(Icons.mark_email_unread_outlined),
+                  label: const Text('Verifikasi email'),
                 ),
-              ),
               const SizedBox(height: 18),
               GestureDetector(
+                key: const ValueKey('open-register'),
                 behavior: HitTestBehavior.opaque,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const Register()),
-                  );
-                },
+                onTap: _openRegister,
                 child: RichText(
                   text: const TextSpan(
                     children: [
@@ -271,14 +197,26 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildTextField({
     required String hintText,
     required TextEditingController controller,
-    bool isObscure = false,
+    bool isPassword = false,
   }) {
     return TextField(
       controller: controller,
-      obscureText: isObscure,
+      obscureText: isPassword && !_showPassword,
       keyboardType: hintText == 'Email' ? TextInputType.emailAddress : null,
       decoration: InputDecoration(
         hintText: hintText,
+        suffixIcon: isPassword
+            ? IconButton(
+                tooltip: _showPassword
+                    ? 'Sembunyikan password'
+                    : 'Tampilkan password',
+                onPressed: () => setState(() => _showPassword = !_showPassword),
+                icon: Icon(
+                  _showPassword ? Icons.visibility_off : Icons.visibility,
+                  color: const Color(0xFFFAAE36),
+                ),
+              )
+            : null,
         hintStyle: const TextStyle(color: Colors.black38, fontSize: 13),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -309,46 +247,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 fontWeight: FontWeight.bold,
                 fontSize: 15)),
       ),
-    );
-  }
-
-  Widget _buildSocialButton({
-    required String asset,
-    required VoidCallback onPressed,
-    Icon? fallbackIcon,
-    Color backgroundColor = const Color(0xFFFAAE36),
-    double iconSize = 36,
-  }) {
-    return SizedBox(
-      width: 64,
-      height: 64,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          padding: EdgeInsets.zero,
-          backgroundColor: backgroundColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
-          ),
-        ),
-        child: fallbackIcon ??
-            Image.asset(asset,
-                width: iconSize, height: iconSize, fit: BoxFit.contain),
-      ),
-    );
-  }
-
-  Widget _buildDivider() {
-    return const Row(
-      children: [
-        Expanded(child: Divider(color: Colors.black26)),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 8.0),
-          child: Text('Atau login menggunakan',
-              style: TextStyle(color: Colors.black54, fontSize: 11)),
-        ),
-        Expanded(child: Divider(color: Colors.black26)),
-      ],
     );
   }
 }

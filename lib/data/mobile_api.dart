@@ -5,10 +5,11 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
 class MobileApiException implements Exception {
-  const MobileApiException(this.message, {this.statusCode});
+  const MobileApiException(this.message, {this.statusCode, this.code});
 
   final String message;
   final int? statusCode;
+  final String? code;
 
   @override
   String toString() => message;
@@ -71,6 +72,7 @@ class MobileApi {
       throw MobileApiException(
         decoded['message']?.toString() ?? 'Permintaan ke server gagal.',
         statusCode: response.statusCode,
+        code: decoded['code']?.toString(),
       );
     }
     return decoded;
@@ -101,16 +103,37 @@ class MobileApi {
   Future<Map<String, dynamic>> login(String email, String password) =>
       _authenticate('/auth/login', {'email': email, 'password': password});
 
-  Future<Map<String, dynamic>> register({
+  Future<String> register({
     required String name,
     required String email,
     required String password,
-  }) =>
-      _authenticate('/auth/register', {
+  }) async {
+    final result = await _send(
+      'POST',
+      '/auth/register',
+      authenticated: false,
+      body: {
         'name': name,
         'email': email,
         'password': password,
-      });
+      },
+    );
+    return result['message']?.toString() ??
+        'Periksa email untuk kode verifikasi.';
+  }
+
+  Future<String> verifyEmail({
+    required String email,
+    required String code,
+  }) async {
+    final result = await _send(
+      'POST',
+      '/auth/verify-email',
+      authenticated: false,
+      body: {'email': email, 'code': code},
+    );
+    return result['message']?.toString() ?? 'Email berhasil diverifikasi.';
+  }
 
   Future<String> requestPasswordReset(String email) async {
     final result = await _send(

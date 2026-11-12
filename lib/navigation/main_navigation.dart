@@ -107,7 +107,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   Widget build(BuildContext context) {
     const destinations = [
       (label: 'Beranda'),
-      (label: 'Pengeluaran'),
+      (label: 'Rekap'),
       (label: 'Budget'),
       (label: 'Transaksi'),
       (label: 'Profil'),
